@@ -1,0 +1,277 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "first_name": "Mireille",
+            "last_name": "Frankis",
+            "email": "mfrankis0@technorati.com",
+            "password": "pE8_\\<_Ud",
+            "type": "admin"
+        },
+        {
+            "id": 2,
+            "first_name": "Adelice",
+            "last_name": "Heyfield",
+            "email": "aheyfield1@pcworld.com",
+            "password": "aH7\"GEEE{n",
+            "type": "manager"
+        },
+        {
+            "id": 3,
+            "first_name": "Karola",
+            "last_name": "Cortnay",
+            "email": "kcortnay2@bing.com",
+            "password": "lN5#,9d*w1={F",
+            "type": "manager"
+        },
+        {
+            "id": 4,
+            "first_name": "Quinlan",
+            "last_name": "Leaney",
+            "email": "qleaney3@latimes.com",
+            "password": "aM2,zj8,/RT(r",
+            "type": "manager"
+        },
+        {
+            "id": 5,
+            "first_name": "Yevette",
+            "last_name": "Andrassy",
+            "email": "yandrassy4@wunderground.com",
+            "password": "uQ7`v,>HOS6`%dYv",
+            "type": "dev"
+        },
+        {
+            "id": 6,
+            "first_name": "Lydon",
+            "last_name": "MacKessock",
+            "email": "lmackessock5@webnode.com",
+            "password": "mL0#D\"0vrI",
+            "type": "dev"
+        },
+        {
+            "id": 7,
+            "first_name": "Darby",
+            "last_name": "Windebank",
+            "email": "dwindebank6@goo.ne.jp",
+            "password": "kZ8}RO)/",
+            "type": "dev"
+        },
+        {
+            "id": 8,
+            "first_name": "Leighton",
+            "last_name": "Bartrap",
+            "email": "lbartrap7@w3.org",
+            "password": "vF6+B}c5AMv=p8o",
+            "type": "dev"
+        },
+        {
+            "id": 9,
+            "first_name": "Urban",
+            "last_name": "Crallan",
+            "email": "ucrallan8@creativecommons.org",
+            "password": "kF4,&\\<Xxs8",
+            "type": "dev"
+        },
+        {
+            "id": 10,
+            "first_name": "Lanie",
+            "last_name": "Maskall",
+            "email": "lmaskall9@theguardian.com",
+            "password": "xG9,(%Q5Sv",
+            "type": "dev"
+        },
+        {
+            "id": 11,
+            "first_name": "Jenifer",
+            "last_name": "Layzell",
+            "email": "jlayzella@free.fr",
+            "password": "dQ3}*#Aa6Pi8`",
+            "type": "dev"
+        },
+        {
+            "id": 12,
+            "first_name": "Callean",
+            "last_name": "Sukbhans",
+            "email": "csukbhansb@netlog.com",
+            "password": "vE2/wCIC.4\"\\",
+            "type": "dev"
+        },
+        {
+            "id": 13,
+            "first_name": "Adam",
+            "last_name": "Creevy",
+            "email": "acreevyc@mit.edu",
+            "password": "mK6>e#O&Mfj8wo{",
+            "type": "dev"
+        },
+        {
+            "id": 14,
+            "first_name": "Charlean",
+            "last_name": "Wasielewicz",
+            "email": "cwasielewiczd@phoca.cz",
+            "password": "wN9+aiFyd7%BD=Ne",
+            "type": "dev"
+        },
+        {
+            "id": 15,
+            "first_name": "Laurel",
+            "last_name": "Lawlee",
+            "email": "llawleee@youtube.com",
+            "password": "gW4\\xLPsD}Fs",
+            "type": "dev"
+        },
+        {
+            "id": 16,
+            "first_name": "Gertruda",
+            "last_name": "Clineck",
+            "email": "gclineckf@artisteer.com",
+            "password": "zP8&+*Tx*6)",
+            "type": "dev"
+        },
+        {
+            "id": 17,
+            "first_name": "Rafaellle",
+            "last_name": "Earl",
+            "email": "rearlg@tinyurl.com",
+            "password": "fC7.Zd1Z_1uQ",
+            "type": "dev"
+        },
+        {
+            "id": 18,
+            "first_name": "Neall",
+            "last_name": "Windress",
+            "email": "nwindressh@slate.com",
+            "password": "lE4&OIpi8OwsK/T",
+            "type": "dev"
+        },
+        {
+            "id": 19,
+            "first_name": "Dalis",
+            "last_name": "Coots",
+            "email": "dcootsi@fotki.com",
+            "password": "qF4@Y/T|",
+            "type": "dev"
+        },
+        {
+            "id": 20,
+            "first_name": "Morgun",
+            "last_name": "Stripp",
+            "email": "mstrippj@reddit.com",
+            "password": "oA8*A66lhId~zGIq",
+            "type": "dev"
+        }
+    ],
+    "teams": [
+        {
+            "id": 1,
+            "name": "Unicorns",
+            "members": [
+                5,
+                6,
+                7,
+                8,
+                9
+            ],
+            "managerID": 2
+        },
+        {
+            "id": 2,
+            "name": "Flavorless",
+            "members": [
+                10,
+                11,
+                12,
+                13,
+                14,
+                15
+            ],
+            "managerID": 3
+        },
+        {
+            "id": 3,
+            "name": "Colorfull",
+            "members": [
+                16,
+                17,
+                18,
+                19,
+                20
+            ],
+            "managerID": 4
+        }
+    ],
+    "Projects": [
+        {
+            "id": 1,
+            "project_name": "Motorola",
+            "team_id": 2
+        },
+        {
+            "id": 2,
+            "project_name": "Huawei",
+            "team_id": 2
+        },
+        {
+            "id": 3,
+            "project_name": "Samsung",
+            "team_id": 3
+        },
+        {
+            "id": 4,
+            "project_name": "Micromax",
+            "team_id": 2
+        },
+        {
+            "id": 5,
+            "project_name": "Huawei",
+            "team_id": 2
+        },
+        {
+            "id": 6,
+            "project_name": "Allview",
+            "team_id": 1
+        }
+    ],
+    "tasks": [
+        {
+            "id": 1,
+            "projectID": 3,
+            "label": "Fully-configurable national matrix",
+            "estimatedTime": 4,
+            "step": 3,
+            "assignedTo": 2
+        },
+        {
+            "id": 2,
+            "projectID": 5,
+            "label": "Enhanced zero tolerance info-mediaries",
+            "estimatedTime": 1,
+            "step": 1,
+            "assignedTo": 2
+        },
+        {
+            "id": 3,
+            "projectID": 1,
+            "label": "Mandatory foreground portal",
+            "estimatedTime": 4,
+            "step": 1,
+            "assignedTo": 4
+        },
+        {
+            "id": 4,
+            "projectID": 2,
+            "label": "Public-key bottom-line process improvement",
+            "estimatedTime": 3,
+            "step": 3,
+            "assignedTo": 3
+        },
+        {
+            "id": 5,
+            "projectID": 2,
+            "label": "Up-sized exuding toolset",
+            "estimatedTime": 1,
+            "step": 3,
+            "assignedTo": 2
+        }
+    ]
+}

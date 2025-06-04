@@ -4,6 +4,16 @@
         description: { type: String},
         done: { type: Boolean }
     })
+
+    const emit = defineEmits(['delete', 'toggle'])
+
+    function handleDelete() {
+        emit('delete')
+    }
+
+    function handleToggle() {
+        emit('toggle')
+    }
 </script>
 
 <template >
@@ -13,15 +23,13 @@
             <p>{{ props.description }}</p>
         </div>
         <div class="actions">
-            <input type="checkbox" :checked="props.done">
-            <button type="button">supprimer</button>
+            <input type="checkbox" :checked="props.done" @change="handleToggle">
+            <button type="button" @click="handleDelete">supprimer</button>
         </div>
     </div>
-
 </template>
 
 <style scoped>
-
     .container {
         padding-top: 5px;
         padding-bottom: 5px;
@@ -42,5 +50,4 @@
         display: flex;
         gap: 20px
     }
-
 </style>
