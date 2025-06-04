@@ -17,10 +17,10 @@
 </script>
 
 <template >
-    <div class="container">
-        <div>
-            <h4>{{ props.title }}</h4>
-            <p>{{ props.description }}</p>
+    <div class="container" :class="{ 'task-done': props.done }">
+        <div class="task-content">
+            <h4 :class="{ 'text-done': props.done }">{{ props.title }}</h4>
+            <p :class="{ 'text-done': props.done }">{{ props.description }}</p>
         </div>
         <div class="actions">
             <input type="checkbox" :checked="props.done" @change="handleToggle">
@@ -38,16 +38,31 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-
         border-style: solid;
         border-width: 1px;
         border-color: black;
+        transition: all 0.3s ease;
     }
-    .text {
+
+    .task-done {
+        background-color: #f0f8ff;
+        border-color: #28a745;
+        opacity: 0.8;
+    }
+
+    .text-done {
+        text-decoration: line-through;
+        color: #6c757d;
+    }
+
+    .task-content {
         display: flex;
+        flex-direction: column;
     }
+
     .actions {
         display: flex;
-        gap: 20px
+        gap: 20px;
+        align-items: center;
     }
 </style>
