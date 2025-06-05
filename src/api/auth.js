@@ -1,18 +1,8 @@
+import { getAuthToken, setAuthToken, removeAuthToken } from '../db/auth'
+import { getUser, setUser, removeUser } from '../db/user'
+
 // Authentication API routes
 const API_BASE_URL = 'http://localhost:3000' // Change this to your actual API URL
-
-// Store auth token in localStorage
-export const getAuthToken = () => {
-  return localStorage.getItem('authToken')
-}
-
-export const setAuthToken = (token) => {
-  localStorage.setItem('authToken', token)
-}
-
-export const removeAuthToken = () => {
-  localStorage.removeItem('authToken')
-}
 
 // Check if user is authenticated
 export const isAuthenticated = () => {
@@ -40,6 +30,9 @@ export const login = async (email, password) => {
       // Store the token if login successful
       if (data.accessToken) {
         setAuthToken(data.accessToken)
+      }
+      if (data.user) {
+        setUser(data.user)
       }
       return {
         success: true,
@@ -83,6 +76,9 @@ export const signup = async (email, password, name) => {
       // Optionally auto-login after signup
       if (data.accessToken) {
         setAuthToken(data.accessToken)
+      }
+      if (data.user) {
+        setUser(data.user)
       }
       return {
         success: true,
