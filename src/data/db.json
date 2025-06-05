@@ -5,7 +5,7 @@
             "first_name": "Mireille",
             "last_name": "Frankis",
             "email": "mfrankis0@technorati.com",
-            "password": "pE8_\\<_Ud",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "admin"
         },
         {
@@ -13,7 +13,7 @@
             "first_name": "Adelice",
             "last_name": "Heyfield",
             "email": "aheyfield1@pcworld.com",
-            "password": "aH7\"GEEE{n",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "manager"
         },
         {
@@ -21,7 +21,7 @@
             "first_name": "Karola",
             "last_name": "Cortnay",
             "email": "kcortnay2@bing.com",
-            "password": "lN5#,9d*w1={F",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "manager"
         },
         {
@@ -29,7 +29,7 @@
             "first_name": "Quinlan",
             "last_name": "Leaney",
             "email": "qleaney3@latimes.com",
-            "password": "aM2,zj8,/RT(r",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "manager"
         },
         {
@@ -37,7 +37,7 @@
             "first_name": "Yevette",
             "last_name": "Andrassy",
             "email": "yandrassy4@wunderground.com",
-            "password": "uQ7`v,>HOS6`%dYv",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -45,7 +45,7 @@
             "first_name": "Lydon",
             "last_name": "MacKessock",
             "email": "lmackessock5@webnode.com",
-            "password": "mL0#D\"0vrI",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -53,7 +53,7 @@
             "first_name": "Darby",
             "last_name": "Windebank",
             "email": "dwindebank6@goo.ne.jp",
-            "password": "kZ8}RO)/",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -61,7 +61,7 @@
             "first_name": "Leighton",
             "last_name": "Bartrap",
             "email": "lbartrap7@w3.org",
-            "password": "vF6+B}c5AMv=p8o",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -69,7 +69,7 @@
             "first_name": "Urban",
             "last_name": "Crallan",
             "email": "ucrallan8@creativecommons.org",
-            "password": "kF4,&\\<Xxs8",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -77,7 +77,7 @@
             "first_name": "Lanie",
             "last_name": "Maskall",
             "email": "lmaskall9@theguardian.com",
-            "password": "xG9,(%Q5Sv",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -85,7 +85,7 @@
             "first_name": "Jenifer",
             "last_name": "Layzell",
             "email": "jlayzella@free.fr",
-            "password": "dQ3}*#Aa6Pi8`",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -93,7 +93,7 @@
             "first_name": "Callean",
             "last_name": "Sukbhans",
             "email": "csukbhansb@netlog.com",
-            "password": "vE2/wCIC.4\"\\",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -101,7 +101,7 @@
             "first_name": "Adam",
             "last_name": "Creevy",
             "email": "acreevyc@mit.edu",
-            "password": "mK6>e#O&Mfj8wo{",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -109,7 +109,7 @@
             "first_name": "Charlean",
             "last_name": "Wasielewicz",
             "email": "cwasielewiczd@phoca.cz",
-            "password": "wN9+aiFyd7%BD=Ne",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -117,7 +117,7 @@
             "first_name": "Laurel",
             "last_name": "Lawlee",
             "email": "llawleee@youtube.com",
-            "password": "gW4\\xLPsD}Fs",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -125,7 +125,7 @@
             "first_name": "Gertruda",
             "last_name": "Clineck",
             "email": "gclineckf@artisteer.com",
-            "password": "zP8&+*Tx*6)",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -133,7 +133,7 @@
             "first_name": "Rafaellle",
             "last_name": "Earl",
             "email": "rearlg@tinyurl.com",
-            "password": "fC7.Zd1Z_1uQ",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -141,7 +141,7 @@
             "first_name": "Neall",
             "last_name": "Windress",
             "email": "nwindressh@slate.com",
-            "password": "lE4&OIpi8OwsK/T",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -149,7 +149,7 @@
             "first_name": "Dalis",
             "last_name": "Coots",
             "email": "dcootsi@fotki.com",
-            "password": "qF4@Y/T|",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         },
         {
@@ -157,7 +157,7 @@
             "first_name": "Morgun",
             "last_name": "Stripp",
             "email": "mstrippj@reddit.com",
-            "password": "oA8*A66lhId~zGIq",
+            "password": "$2a$10$kIUzDU5xUpRY5dQ5mZAxFuRLFG4wrD6kFL4zo2q802LF7oGGOyVy6",
             "type": "dev"
         }
     ],
@@ -239,7 +239,7 @@
             "label": "Fully-configurable national matrix",
             "estimatedTime": 4,
             "step": 3,
-            "assignedTo": 2
+            "assignedTo": 16
         },
         {
             "id": 2,
@@ -247,7 +247,7 @@
             "label": "Enhanced zero tolerance info-mediaries",
             "estimatedTime": 1,
             "step": 1,
-            "assignedTo": 2
+            "assignedTo": 10
         },
         {
             "id": 3,
@@ -255,7 +255,7 @@
             "label": "Mandatory foreground portal",
             "estimatedTime": 4,
             "step": 1,
-            "assignedTo": 4
+            "assignedTo": 6
         },
         {
             "id": 4,
@@ -263,15 +263,15 @@
             "label": "Public-key bottom-line process improvement",
             "estimatedTime": 3,
             "step": 3,
-            "assignedTo": 3
+            "assignedTo": 11
         },
         {
             "id": 5,
-            "projectID": 2,
+            "projectID": 3,
             "label": "Up-sized exuding toolset",
             "estimatedTime": 1,
             "step": 3,
-            "assignedTo": 2
+            "assignedTo": 18
         }
     ]
 }
