@@ -1,100 +1,466 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import Input from '../components/input/input.vue'
-import Button from '../components/button/button.vue'
-import Task from '../components/task/task.vue'
-import { 
-  tasks, 
-  getTasks, 
-  addTask as addTaskToStore, 
-  deleteTask as deleteTaskFromStore, 
-  toggleTask as toggleTaskInStore 
-} from '../../db/tasks.js'
+import { ref, computed, onMounted, inject } from 'vue'
+import { fetchTasks, updateTaskStatus } from '../../api/tasks.js'
+import { fetchProjects } from '../../api/projects.js'
+import { fetchUsers } from '../../api/users.js'
 
-const title = ref('')
-const description = ref('')
+// User context
+const user = inject('user')
 
-const addTask = (e) => {
-  e.preventDefault()
-  if (!title.value) return
-  
-  addTaskToStore({
-    title: title.value,
-    description: description.value
+// Reactive data
+const tasks = ref([])
+const projects = ref([])
+const users = ref([])
+const isLoading = ref(true)
+const error = ref(null)
+
+console.log("tasks", tasks.value)
+// Kanban columns configuration
+const kanbanColumns = [
+  { id: 1, name: 'Backlog', step: 1, color: '#6c757d' },
+  { id: 2, name: 'Todo', step: 2, color: '#007bff' },
+  { id: 3, name: 'In Progress', step: 3, color: '#ffc107' },
+  { id: 4, name: 'Review', step: 4, color: '#fd7e14' },
+  { id: 5, name: 'Done', step: 5, color: '#28a745' }
+]
+
+// Computed properties
+const tasksByStatus = computed(() => {
+  const grouped = {}
+  kanbanColumns.forEach(column => {
+    grouped[column.step] = tasks.value.filter(task => task.step === column.step)
   })
+  return grouped
+})
+
+const userTasks = computed(() => {
+  if (user.value?.type === 'dev') {
+    return tasks.value.filter(task => task.assignedTo === user.value.id)
+  }
+  return tasks.value
+})
+
+const userTasksByStatus = computed(() => {
+  const grouped = {}
+  kanbanColumns.forEach(column => {
+    grouped[column.step] = userTasks.value.filter(task => task.step === column.step)
+  })
+  return grouped
+})
+
+// Helper functions
+const getProjectName = (projectId) => {
+  const project = projects.value.find(p => p.id === projectId)
+  return project ? project.project_name : 'Unknown Project'
+}
+
+const getUserName = (userId) => {
+  const userData = users.value.find(u => u.id === userId)
+  return userData ? `${userData.first_name} ${userData.last_name}` : 'Unassigned'
+}
+
+const getStatusColor = (step) => {
+  const column = kanbanColumns.find(col => col.step === step)
+  return column ? column.color : '#6c757d'
+}
+
+// API functions - now using imported functions
+const loadTasks = async () => {
+  try {
+    tasks.value = await fetchTasks()
+    console.log('Tasks loaded:', tasks.value)
+  } catch (err) {
+    console.error('Error fetching tasks:', err)
+    error.value = 'Failed to load tasks'
+  }
+}
+
+const loadProjects = async () => {
+  try {
+    projects.value = await fetchProjects()
+  } catch (err) {
+    console.error('Error fetching projects:', err)
+  }
+}
+
+const loadUsers = async () => {
+  try {
+    users.value = await fetchUsers()
+  } catch (err) {
+    console.error('Error fetching users:', err)
+  }
+}
+
+const updateTaskStatusHandler = async (taskId, newStep) => {
+  try {
+    const updatedTask = await updateTaskStatus(taskId, newStep)
+    const taskIndex = tasks.value.findIndex(t => t.id === taskId)
+    if (taskIndex !== -1) {
+      tasks.value[taskIndex] = updatedTask
+    }
+    return true
+  } catch (err) {
+    console.error('Error updating task:', err)
+    error.value = 'Failed to update task status'
+    return false
+  }
+}
+
+// Drag and drop functionality
+const draggedTask = ref(null)
+
+const onDragStart = (event, task) => {
+  draggedTask.value = task
+  event.dataTransfer.effectAllowed = 'move'
+}
+
+const onDragOver = (event) => {
+  event.preventDefault()
+}
+
+const onDrop = async (event, newStep) => {
+  event.preventDefault()
   
-  title.value = ''
-  description.value = ''
-}
-
-const deleteTask = (index) => {
-  const task = tasks.value[index]
-  if (task) {
-    deleteTaskFromStore(task.id)
+  if (draggedTask.value && draggedTask.value.step !== newStep) {
+    const success = await updateTaskStatusHandler(draggedTask.value.id, newStep)
+    if (!success) {
+      // Revert on failure - the error will be shown to user
+      console.error('Failed to update task status')
+    }
   }
+  
+  draggedTask.value = null
 }
 
-const toggleTask = (index) => {
-  const task = tasks.value[index]
-  if (task) {
-    toggleTaskInStore(task.id)
+// Lifecycle
+onMounted(async () => {
+  isLoading.value = true
+  try {
+    await Promise.all([
+      loadTasks(),
+      loadProjects(),
+      loadUsers()
+    ])
+  } catch (err) {
+    error.value = 'Failed to load data'
+  } finally {
+    isLoading.value = false
   }
-}
-
-const totalTask = computed(() => tasks.value.length)
-const totalTaskNotDone = computed(() => tasks.value.filter((task) => !task.done).length)
-const totalTaskDone = computed(() => tasks.value.filter((task) => task.done).length)
-
-onMounted(() => {
-  getTasks()
 })
 </script>
 
 <template>
-  <header>
-  </header>
+  <div class="kanban-container">
+    <div class="kanban-header">
+      <h1>{{ user?.type === 'dev' ? 'My Tasks' : 'Project Tasks' }} - Kanban Board</h1>
+      <div v-if="error" class="error-message">
+        {{ error }}
+      </div>
+    </div>
 
-  <form @submit="addTask">
-    <Input
-      id="title"
-      name="title"
-      label="Renseignez le titre"
-      placeholder="Titre de la tâche"
-      :value="title"
-      @update="val => title = val"
-    />
-    <Input
-      id="description"
-      name="description"
-      label="Renseignez la description"
-      placeholder="Description de la tâche"
-      :value="description"
-      @update="val => description = val"
-    />
-    <Button type="submit" label="Ajouter une task" />
-  </form>
+    <div v-if="isLoading" class="loading">
+      <p>Loading tasks...</p>
+    </div>
 
-  <div> Vous avez {{ totalTask }} tâche{{ totalTask > 1 ? "s" : "" }}</div>
-  <div> Vous avez {{ totalTaskNotDone }} tâche{{ totalTaskNotDone > 1 ? "s" : "" }} en cours</div>
-  <div> Vous avez {{ totalTaskDone }} tâche{{ totalTaskDone > 1 ? "s" : "" }} terminée{{ totalTaskDone > 1 ? "s" : "" }}</div>
+    <div v-else class="kanban-board">
+      <div 
+        v-for="column in kanbanColumns" 
+        :key="column.id"
+        class="kanban-column"
+        @dragover="onDragOver"
+        @drop="onDrop($event, column.step)"
+      >
+        <div class="column-header" :style="{ borderTopColor: column.color }">
+          <h3>{{ column.name }}</h3>
+          <span class="task-count">
+            {{ user?.type === 'dev' ? 
+                (userTasksByStatus[column.step]?.length || 0) : 
+                (tasksByStatus[column.step]?.length || 0) }}
+          </span>
+        </div>
+        
+        <div class="column-content">
+          <div 
+            v-for="task in (user?.type === 'dev' ? userTasksByStatus[column.step] : tasksByStatus[column.step])" 
+            :key="task.id"
+            class="task-card"
+            draggable="true"
+            @dragstart="onDragStart($event, task)"
+          >
+            <div class="task-header">
+              <h4 class="task-title">{{ task.label }}</h4>
+              <div class="task-status-indicator" :style="{ backgroundColor: getStatusColor(task.step) }"></div>
+            </div>
+            
+            <div class="task-details">
+              <p class="task-project">
+                <strong>Project:</strong> {{ getProjectName(task.projectID) }}
+              </p>
+              <p class="task-time">
+                <strong>Estimated:</strong> {{ task.estimatedTime }}h
+              </p>
+            </div>
 
-  <div class="list">
-    <Task
-      v-for="(task, index) in tasks"
-      :key="task.id"
-      :title="task.title"
-      :description="task.description"
-      :done="task.done"
-      @delete="deleteTask(index)"
-      @toggle="toggleTask(index)"
-    />
+            <div class="task-footer">
+              <span class="task-id">#{{ task.id }}</span>
+            </div>
+          </div>
+          
+          <div v-if="!(user?.type === 'dev' ? userTasksByStatus[column.step]?.length : tasksByStatus[column.step]?.length)" class="empty-column">
+            <p>No tasks in {{ column.name.toLowerCase() }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="kanban-footer">
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-label">Total Tasks:</span>
+          <span class="stat-value">{{ user?.type === 'dev' ? userTasks.length : tasks.length }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">In Progress:</span>
+          <span class="stat-value">
+            {{ user?.type === 'dev' ? 
+                (userTasksByStatus[3]?.length || 0) : 
+                (tasksByStatus[3]?.length || 0) }}
+          </span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Completed:</span>
+          <span class="stat-value">
+            {{ user?.type === 'dev' ? 
+                (userTasksByStatus[5]?.length || 0) : 
+                (tasksByStatus[5]?.length || 0) }}
+          </span>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <style scoped>
-  .list {
-    display: flex;
-    flex-direction: column;
-    gap: 5px 
+.kanban-container {
+  padding: 20px;
+  background-color: #f8f9fa;
+  min-height: 100vh;
+}
+
+.kanban-header {
+  margin-bottom: 30px;
+}
+
+.kanban-header h1 {
+  color: #2c3e50;
+  margin-bottom: 10px;
+}
+
+.error-message {
+  background-color: #f8d7da;
+  color: #721c24;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #f5c6cb;
+  margin-bottom: 20px;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px;
+  color: #6c757d;
+}
+
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.kanban-column {
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  min-height: 500px;
+}
+
+.column-header {
+  padding: 16px 20px;
+  background-color: #f8f9fa;
+  border-top: 4px solid #007bff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.column-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.task-count {
+  background-color: #e9ecef;
+  color: #495057;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.column-content {
+  padding: 16px;
+  min-height: 400px;
+}
+
+.task-card {
+  background-color: #ffffff;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  cursor: grab;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.task-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #007bff;
+}
+
+.task-card:active {
+  cursor: grabbing;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.task-title {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.task-status-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.task-details {
+  margin-bottom: 12px;
+}
+
+.task-details p {
+  margin: 6px 0;
+  color: #6c757d;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.task-details strong {
+  color: #495057;
+}
+
+.task-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #f8f9fa;
+}
+
+.task-id {
+  color: #adb5bd;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.empty-column {
+  text-align: center;
+  padding: 40px 20px;
+  color: #adb5bd;
+  font-style: italic;
+}
+
+.kanban-footer {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.stats {
+  display: flex;
+  gap: 30px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.stat-label {
+  color: #6c757d;
+  font-size: 0.9rem;
+}
+
+.stat-value {
+  color: #2c3e50;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .kanban-container {
+    padding: 15px;
   }
+  
+  .kanban-board {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+  
+  .column-content {
+    padding: 12px;
+  }
+  
+  .task-card {
+    padding: 12px;
+  }
+  
+  .stats {
+    gap: 20px;
+  }
+}
+
+/* Drag and drop visual feedback */
+.task-card.dragging {
+  opacity: 0.5;
+  transform: rotate(5deg);
+}
+
+.kanban-column.drag-over {
+  background-color: rgba(0, 123, 255, 0.1);
+}
 </style>
