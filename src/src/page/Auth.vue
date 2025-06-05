@@ -6,7 +6,8 @@ import { login, signup } from '../../api/auth.js'
 
 const email = ref('')
 const password = ref('')
-const name = ref('')
+const firstName = ref('')
+const lastName = ref('')
 const isLoginMode = ref(true)
 const isLoading = ref(false)
 const errorMessage = ref('')
@@ -33,7 +34,7 @@ const handleSignup = async () => {
   isLoading.value = true
   errorMessage.value = ''
   
-  const result = await signup(email.value, password.value, name.value)
+  const result = await signup(email.value, password.value, firstName.value, lastName.value)
   
   if (result.success) {
     user.value = result.user
@@ -59,7 +60,8 @@ const toggleMode = () => {
   // Clear form when switching modes
   email.value = ''
   password.value = ''
-  name.value = ''
+  firstName.value = ''
+  lastName.value = ''
 }
 </script>
 
@@ -74,11 +76,19 @@ const toggleMode = () => {
         <form @submit.prevent="handleSubmit">
             <Input
                 v-if="!isLoginMode"
-                id="name"
-                name="name"
+                id="firstName"
+                name="firstName"
+                label="Prénom"
+                :value="firstName"
+                @update="val => firstName = val"
+            />
+            <Input
+                v-if="!isLoginMode"
+                id="lastName"
+                name="lastName"
                 label="Nom"
-                :value="name"
-                @update="val => name = val"
+                :value="lastName"
+                @update="val => lastName = val"
             />
             
             <Input
@@ -101,7 +111,6 @@ const toggleMode = () => {
             <Button 
                 type="submit" 
                 :label="isLoading ? 'Chargement...' : (isLoginMode ? 'Se connecter' : 'S\'inscrire')"
-                @click="handleSubmit"
             />
         </form>
 

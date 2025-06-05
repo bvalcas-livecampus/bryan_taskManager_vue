@@ -19,7 +19,6 @@ watch(() => props.value, (newVal) => {
 
 function onInput(event) {
     text.value = event.target.value
-    console.log(`onInput: ${text.value}`)
     emit('update', text.value)
 }
 </script>

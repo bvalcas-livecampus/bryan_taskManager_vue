@@ -162,15 +162,11 @@
     },
     {
       "email": "test@test.test",
-      "password": "$2a$10$0MLYaIfKTuje/phR/EqbgO3BWAiwsGnHi5ZN1wW..U7SbWW9wyKNW",
-      "name": "tzest",
+      "password": "$2a$10$4ldmI8eKHkofJNbxw7cmlOSr2dlE58WQredeb4gKNSP2TYQHbfT8K",
+      "first_name": "bryan",
+      "last_name": "valcasara",
+      "type": "dev",
       "id": 21
-    },
-    {
-      "email": "test@test.test",
-      "password": "$2a$10$fJrloJfngG9xFlpafIsUyuBSRK2IghLvcppA0FObq7LnJ9RWOnPtu",
-      "name": "tzest",
-      "id": 22
     }
   ],
   "teams": [

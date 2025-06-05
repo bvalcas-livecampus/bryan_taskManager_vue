@@ -18,15 +18,20 @@
 <template>
     <header class="header">
         <div class="header-content">
-            <div class="user-info" v-if="isConnected && username">
-                <span class="username">{{ username }}</span>
+            <div class="app-title" v-if="!isConnected">
+                <h2>Task Manager</h2>
             </div>
             <div class="app-title" v-else>
                 <h2>Task Manager</h2>
             </div>
-            <button v-if="isConnected" @click="disconnect" class="disconnect-btn">
-                Disconnect
-            </button>
+            <div class="right-section" v-if="isConnected">
+                <div class="user-info">
+                    <span class="username">{{ username }}</span>
+                </div>
+                <button @click="disconnect" class="disconnect-btn">
+                    Disconnect
+                </button>
+            </div>
         </div>
     </header>
 </template>
@@ -48,6 +53,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
+
+.right-section {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
 }
 
 .user-info {

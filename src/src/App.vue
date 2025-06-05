@@ -1,5 +1,5 @@
 <script setup>
-import Header from './components/header/Header.vue'
+import Header from './components/header/header.vue'
 import { getUser } from '../db/user.js'
 import { logout } from '../api/auth.js'
 import { useRouter, useRoute } from 'vue-router'
@@ -20,32 +20,59 @@ const handleLoggout = () => {
     router.push('/');
 };
 
-console.log("route", route.path)
 watch(isUserConnected, (newValue, oldValue) => {
     if (!newValue) {
         router.push('/');
     } else {
-      if (route.path === '/') {
-        router.push('/kanban');
-      }
+        if (route.path === '/') {
+            // Redirect based on user role
+            connected();
+        }
     }
 });
 
+
 const connected = () => {
-    router.push('/kanban');
+    // Redirect user to their role-specific default page
+    if (user.value) {
+        switch (user.value.type) {
+            case 'dev':
+                router.push('/kanban');
+                break;
+            case 'manager':
+                router.push('/projects');
+                break;
+            case 'admin':
+                router.push('/users');
+                break;
+            default:
+                router.push('/kanban');
+        }
+    } else {
+        router.push('/kanban');
+    }
+}
+
+
+if (isUserConnected.value) {
+    // If user is already connected, redirect to their role-specific default page
+    connected();
 }
 </script>
 
 <template>
     <header>
         <Header 
-            :username="user?.name" 
+            :username="user?.first_name + ' ' + user?.last_name" 
             :isConnected="isUserConnected"
             @disconnect="handleLoggout"
         />
     </header>
     <main>
-      <Drawer :isConnected="isUserConnected" >
+      <Drawer 
+        :isConnected="isUserConnected" 
+        :userRole="user?.type"
+      >
         <RouterView @connected="connected"/>
       </Drawer>
     </main>

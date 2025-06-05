@@ -56,7 +56,7 @@ export const login = async (email, password) => {
 }
 
 // Signup function
-export const signup = async (email, password, name) => {
+export const signup = async (email, password, first_name, last_name) => {
   try {
     const response = await fetch(`${API_BASE_URL}/signup`, {
       method: 'POST',
@@ -66,7 +66,9 @@ export const signup = async (email, password, name) => {
       body: JSON.stringify({
         email,
         password,
-        name
+        first_name,
+        last_name,
+        type: 'dev',
       })
     })
 

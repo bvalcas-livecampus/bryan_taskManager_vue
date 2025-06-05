@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const props = defineProps({
     isConnected: {
@@ -13,6 +13,34 @@ const props = defineProps({
     width: {
         type: String,
         default: '280px'
+    },
+    userRole: {
+        type: String,
+        default: null
+    }
+})
+
+// Define navigation items based on user role
+const navigationItems = computed(() => {
+    if (!props.userRole) return []
+    
+    switch (props.userRole) {
+        case 'dev':
+            return [
+                { path: '/kanban', label: '📋 Kanban', icon: '📋' }
+            ]
+        case 'manager':
+            return [
+                { path: '/projects', label: '📁 Projects', icon: '📁' },
+                { path: '/tasks', label: '✅ Tasks', icon: '✅' }
+            ]
+        case 'admin':
+            return [
+                { path: '/users', label: '👥 Users', icon: '👥' },
+                { path: '/teams', label: '🏢 Teams', icon: '🏢' }
+            ]
+        default:
+            return []
     }
 })
 
@@ -67,10 +95,9 @@ const handleOverlayClick = (event) => {
                     <!-- Navigation/Menu Content -->
                     <nav class="drawer-nav">
                         <ul>
-                            <li><RouterLink href="/kanban">📋 Kanban</RouterLink></li>
-                            <li><RouterLink href="/tasks">✅ Tasks</RouterLink></li>
-                            <li><RouterLink href="/profile">👤 Profile</RouterLink></li>
-                            <li><RouterLink href="/settings">⚙️ Settings</RouterLink></li>
+                            <li v-for="item in navigationItems" :key="item.path">
+                                <RouterLink :to="item.path">{{ item.label }}</RouterLink>
+                            </li>
                         </ul>
                     </nav>
                 </div>
