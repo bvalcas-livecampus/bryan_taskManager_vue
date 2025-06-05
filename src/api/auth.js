@@ -110,7 +110,10 @@ export const logout = async () => {
       // Remove token from localStorage
       removeAuthToken()
     }
-    
+    if (getUser()) {
+      // Remove user data from localStorage
+      removeUser()
+    }
     
     return {
       success: true

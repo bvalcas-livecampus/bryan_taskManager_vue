@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, inject } from 'vue'
 import Input from '../components/input/input.vue'
 import Button from '../components/button/button.vue'
 import { login, signup } from '../../api/auth.js'
@@ -10,19 +10,21 @@ const name = ref('')
 const isLoginMode = ref(true)
 const isLoading = ref(false)
 const errorMessage = ref('')
+const user = inject('user')
+const emit = defineEmits(['connected'])
 
 const handleLogin = async () => {
-  isLoading.value = true
-  errorMessage.value = ''
-  
-  const result = await login(email.value, password.value)
-  
-  if (result.success) {
-    console.log('Login successful:', result.user)
-    // Redirect to main app or emit success event
-  } else {
-    errorMessage.value = result.error
-  }
+    isLoading.value = true
+    errorMessage.value = ''
+    
+    const result = await login(email.value, password.value)
+    
+    if (result.success) {
+        user.value = result.user
+        emit('connected')
+    } else {
+        errorMessage.value = result.error
+    }
   
   isLoading.value = false
 }
@@ -34,7 +36,7 @@ const handleSignup = async () => {
   const result = await signup(email.value, password.value, name.value)
   
   if (result.success) {
-    console.log('Signup successful:', result.user)
+    user.value = result.user
     // Redirect to main app or emit success event
   } else {
     errorMessage.value = result.error
