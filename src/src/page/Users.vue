@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchUsers, updateUser, createUser } from '../../api/users.js'
+import { fetchUsers, updateUser, createUser, deleteUser } from '../../api/users.js'
 import { getUser } from '../../db/user.js'
 
 // Import components
@@ -210,6 +210,56 @@ const handleCreateUser = async () => {
     creatingUser.value = false
   }
 }
+
+// Delete user
+const handleDeleteUser = async (user) => {
+  // Create a detailed confirmation message
+  let confirmMessage = `Are you sure you want to delete user "${user.first_name} ${user.last_name}"?\n\n`
+  
+  // Add warnings based on user type
+  if (user.type === 'manager') {
+    confirmMessage += "⚠️ WARNING: This manager may be assigned to teams and will need to be replaced.\n"
+  } else if (user.type === 'dev') {
+    confirmMessage += "⚠️ WARNING: This developer may be assigned to tasks and teams.\n"
+  }
+  
+  confirmMessage += "\nThis action cannot be undone and may affect related data."
+
+  // Confirm deletion
+  if (!confirm(confirmMessage)) {
+    return
+  }
+
+  try {
+    loading.value = true
+    error.value = ''
+    successMessage.value = ''
+    
+    await deleteUser(user.id)
+    
+    // Remove the user from the local array
+    users.value = users.value.filter(u => u.id !== user.id)
+    
+    successMessage.value = `User "${user.first_name} ${user.last_name}" deleted successfully!`
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+    
+  } catch (err) {
+    console.error('Error deleting user:', err)
+    error.value = 'Failed to delete user. Please try again.'
+  } finally {
+    loading.value = false
+  }
+}
+
+// Check if current user can delete a specific user
+const canDeleteUser = (user) => {
+  // Only admins can delete users, and they cannot delete themselves
+  return currentUser.value?.type === 'admin' && user.id !== currentUser.value?.id
+}
 </script>
 
 <template>
@@ -315,7 +365,15 @@ const handleCreateUser = async () => {
                   >
                     Edit Type
                   </button>
-                  <span v-else class="no-edit">
+                  <button 
+                    v-if="canDeleteUser(user)"
+                    @click="handleDeleteUser(user)" 
+                    class="btn btn-delete"
+                    :disabled="loading"
+                  >
+                    Delete
+                  </button>
+                  <span v-if="!canEditUser(user) && !canDeleteUser(user)" class="no-edit">
                     {{ user.id === currentUser?.id ? '(Current User)' : '—' }}
                   </span>
                 </div>
@@ -607,7 +665,8 @@ const handleCreateUser = async () => {
 
 /* Action Buttons */
 .user-actions {
-  width: 140px;
+  width: 180px;
+  text-align: center;
 }
 
 .edit-actions,
@@ -615,6 +674,8 @@ const handleCreateUser = async () => {
   display: flex;
   gap: 0.5rem;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
 }
 
 .btn {
@@ -627,6 +688,8 @@ const handleCreateUser = async () => {
   transition: all 0.2s;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  white-space: nowrap;
+  min-width: 60px;
 }
 
 .btn:disabled {
@@ -658,6 +721,24 @@ const handleCreateUser = async () => {
 }
 
 .btn-cancel:hover:not(:disabled) {
+  background: #c53030;
+}
+
+.btn-delete {
+  background: #e53e3e;
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-delete:hover:not(:disabled) {
   background: #c53030;
 }
 
