@@ -1,8 +1,13 @@
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
-import { fetchTasks, updateTaskStatus } from '../../api/tasks.js'
+import { fetchTasks, updateTaskStatus, updateTask } from '../../api/tasks.js'
 import { fetchProjects } from '../../api/projects.js'
 import { fetchUsers } from '../../api/users.js'
+import Modal from '../components/modal/Modal.vue'
+import FormGroup from '../components/form/FormGroup.vue'
+import Input from '../components/input/input.vue'
+import Button from '../components/button/button.vue'
+import Alert from '../components/alert/Alert.vue'
 
 // User context
 const user = inject('user')
@@ -13,6 +18,17 @@ const projects = ref([])
 const users = ref([])
 const isLoading = ref(true)
 const error = ref(null)
+
+// Task edit modal state
+const showEditModal = ref(false)
+const editingTask = ref(null)
+const editFormData = ref({
+  label: '',
+  description: '',
+  step: 1
+})
+const isUpdatingTask = ref(false)
+const updateError = ref('')
 
 console.log("tasks", tasks.value)
 // Kanban columns configuration
@@ -110,12 +126,23 @@ const updateTaskStatusHandler = async (taskId, newStep) => {
 const draggedTask = ref(null)
 
 const onDragStart = (event, task) => {
+  isDragging.value = true
   draggedTask.value = task
   event.dataTransfer.effectAllowed = 'move'
+  // Prevent click event when dragging
+  event.stopPropagation()
 }
 
 const onDragOver = (event) => {
   event.preventDefault()
+}
+
+const onDragEnd = () => {
+  // Reset dragging state when drag operation ends (even if dropped outside)
+  setTimeout(() => {
+    isDragging.value = false
+    draggedTask.value = null
+  }, 100)
 }
 
 const onDrop = async (event, newStep) => {
@@ -130,6 +157,86 @@ const onDrop = async (event, newStep) => {
   }
   
   draggedTask.value = null
+  // Reset dragging state after a short delay to prevent accidental clicks
+  setTimeout(() => {
+    isDragging.value = false
+  }, 100)
+}
+
+// Task editing functionality
+const isDragging = ref(false)
+
+const openTaskEditModal = (task) => {
+  if (user.value?.type !== 'dev' || isDragging.value) return // Only devs can edit tasks
+  
+  editingTask.value = task
+  editFormData.value = {
+    label: task.label,
+    description: task.description || '',
+    step: task.step
+  }
+  updateError.value = ''
+  showEditModal.value = true
+}
+
+const closeTaskEditModal = () => {
+  showEditModal.value = false
+  editingTask.value = null
+  editFormData.value = {
+    label: '',
+    description: '',
+    step: 1
+  }
+  updateError.value = ''
+}
+
+const saveTaskChanges = async () => {
+  if (!editingTask.value) return
+  
+  try {
+    isUpdatingTask.value = true
+    updateError.value = ''
+    
+    // Prepare update data - only include changed fields
+    const updates = {}
+    if (editFormData.value.label !== editingTask.value.label) {
+      updates.label = editFormData.value.label.trim()
+    }
+    if (editFormData.value.description !== (editingTask.value.description || '')) {
+      updates.description = editFormData.value.description.trim()
+    }
+    if (editFormData.value.step !== editingTask.value.step) {
+      updates.step = editFormData.value.step
+    }
+    
+    // Validate that we have something to update
+    if (Object.keys(updates).length === 0) {
+      closeTaskEditModal()
+      return
+    }
+    
+    // Validate required fields
+    if (updates.label !== undefined && !updates.label) {
+      updateError.value = 'Task title is required'
+      return
+    }
+    
+    // Update task via API
+    const updatedTask = await updateTask(editingTask.value.id, updates)
+    
+    // Update local tasks array
+    const taskIndex = tasks.value.findIndex(t => t.id === editingTask.value.id)
+    if (taskIndex !== -1) {
+      tasks.value[taskIndex] = updatedTask
+    }
+    
+    closeTaskEditModal()
+  } catch (err) {
+    console.error('Error updating task:', err)
+    updateError.value = 'Failed to update task. Please try again.'
+  } finally {
+    isUpdatingTask.value = false
+  }
 }
 
 // Lifecycle
@@ -184,8 +291,11 @@ onMounted(async () => {
             v-for="task in (user?.type === 'dev' ? userTasksByStatus[column.step] : tasksByStatus[column.step])" 
             :key="task.id"
             class="task-card"
+            :class="{ 'clickable': user?.type === 'dev' }"
             draggable="true"
             @dragstart="onDragStart($event, task)"
+            @dragend="onDragEnd"
+            @click="user?.type === 'dev' ? openTaskEditModal(task) : null"
           >
             <div class="task-header">
               <h4 class="task-title">{{ task.label }}</h4>
@@ -237,6 +347,65 @@ onMounted(async () => {
         </div>
       </div>
     </div>
+
+    <!-- Task Edit Modal -->
+    <Modal 
+      :is-visible="showEditModal" 
+      title="Edit Task"
+      @close="closeTaskEditModal"
+    >
+      <Alert :message="updateError" type="error" />
+      
+      <FormGroup label="Task Title" input-id="taskTitle">
+        <Input
+          id="taskTitle"
+          name="taskTitle"
+          :value="editFormData.label"
+          @update="editFormData.label = $event"
+          placeholder="Enter task title"
+        />
+      </FormGroup>
+      
+      <FormGroup label="Description" input-id="taskDescription">
+        <textarea
+          id="taskDescription"
+          v-model="editFormData.description"
+          class="form-control textarea"
+          placeholder="Enter task description (optional)"
+          rows="4"
+        ></textarea>
+      </FormGroup>
+      
+      <FormGroup label="Status" input-id="taskStatus">
+        <select 
+          id="taskStatus"
+          v-model="editFormData.step"
+          class="form-control"
+        >
+          <option 
+            v-for="column in kanbanColumns" 
+            :key="column.step" 
+            :value="column.step"
+          >
+            {{ column.name }}
+          </option>
+        </select>
+      </FormGroup>
+      
+      <template #footer>
+        <Button 
+          @click="saveTaskChanges" 
+          variant="success"
+          label="Save Changes"
+          :loading="isUpdatingTask"
+        />
+        <Button 
+          @click="closeTaskEditModal" 
+          variant="secondary"
+          label="Cancel"
+        />
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -336,6 +505,20 @@ onMounted(async () => {
 
 .task-card:active {
   cursor: grabbing;
+}
+
+.task-card.clickable {
+  cursor: pointer;
+}
+
+.task-card.clickable:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: #007bff;
+}
+
+.task-card.clickable:active {
+  transform: translateY(0);
 }
 
 .task-header {
@@ -462,5 +645,29 @@ onMounted(async () => {
 
 .kanban-column.drag-over {
   background-color: rgba(0, 123, 255, 0.1);
+}
+
+/* Form styles for modal */
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 1rem;
+  color: #2d3748;
+  background-color: #ffffff;
+  transition: all 0.2s;
+  outline: none;
+}
+
+.form-control:focus {
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: inherit;
 }
 </style>
