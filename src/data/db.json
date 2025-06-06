@@ -183,6 +183,22 @@
       "last_name": "larousse",
       "type": "manager",
       "id": 23
+    },
+    {
+      "email": "test4@test.com",
+      "password": "$2a$10$z4vkYdM0LBCFIR4TPclxr.IgtRtch.owZ4tRx6XSoMKy9Tr42NMZ6",
+      "first_name": "mon nouveau utilisateur",
+      "last_name": "son nom",
+      "type": "dev",
+      "id": 24
+    },
+    {
+      "email": "test5@test.test",
+      "password": "$2a$10$aji60nSQ9ZAeo56QbyknAeV4qYqYto98CjZF013WAxfi0kO31YXlW",
+      "first_name": "mon manager",
+      "last_name": "manag",
+      "type": "manager",
+      "id": 25
     }
   ],
   "teams": [
@@ -231,6 +247,14 @@
         22
       ],
       "id": 4
+    },
+    {
+      "name": "ma super team",
+      "managerID": 25,
+      "members": [
+        24
+      ],
+      "id": 5
     }
   ],
   "Projects": [
@@ -324,7 +348,7 @@
     },
     {
       "label": "nouvelle tache",
-      "description": "ffffff",
+      "description": "ceci est la description de ma tache",
       "projectID": 8,
       "assignedTo": 21,
       "estimatedTime": 1,
@@ -360,12 +384,21 @@
     },
     {
       "label": "5ieme tache",
-      "description": "tttttt",
+      "description": "le design n'est pas clair",
       "projectID": 9,
       "assignedTo": 21,
       "estimatedTime": 1,
-      "step": 2,
+      "step": 4,
       "id": 10
+    },
+    {
+      "label": "ma super tache",
+      "description": "ceci est une description",
+      "projectID": 9,
+      "assignedTo": 22,
+      "estimatedTime": 1,
+      "step": 1,
+      "id": 11
     }
   ]
 }
