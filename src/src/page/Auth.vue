@@ -71,7 +71,9 @@ const toggleMode = () => {
     <div class="auth-container">
       <!-- Brand Header -->
       <div class="brand-header">
-        <div class="brand-logo">🦕</div>
+        <div class="brand-logo">
+          <img src="/donezilla.ico" alt="Donezilla Logo" class="brand-logo-img" />
+        </div>
         <h1 class="brand-title">Donezilla</h1>
         <p class="brand-subtitle">Task Management Made Simple</p>
       </div>
@@ -197,6 +199,16 @@ const toggleMode = () => {
 .brand-logo {
   font-size: 4rem;
   margin-bottom: 0.5rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.brand-logo-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
 }
 
@@ -332,6 +344,11 @@ const toggleMode = () => {
   
   .brand-logo {
     font-size: 3rem;
+  }
+  
+  .brand-logo-img {
+    width: 48px;
+    height: 48px;
   }
   
   .name-fields {
