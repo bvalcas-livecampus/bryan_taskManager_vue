@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { fetchTeams, fetchTeamsByManager, createTeam } from '../../api/teams.js'
+import { fetchTeams, fetchTeamsByManager, createTeam, updateTeam } from '../../api/teams.js'
 import { fetchProjects } from '../../api/projects.js'
 import { fetchUsers } from '../../api/users.js'
 import { getUser } from '../../db/user.js'
@@ -32,6 +32,17 @@ const newTeam = ref({
   managerID: null,
   members: []
 })
+
+// Team editing form
+const showEditForm = ref(false)
+const editingTeam = ref(false)
+const editTeam = ref({
+  id: null,
+  name: '',
+  managerID: null,
+  members: []
+})
+const originalTeam = ref(null)
 
 onMounted(async () => {
   try {
@@ -227,6 +238,116 @@ const getUserName = (userId) => {
   const user = users.value.find(u => u.id === userId)
   return user ? `${user.first_name} ${user.last_name}` : `User #${userId}`
 }
+
+// Open edit team form
+const openEditForm = (team) => {
+  originalTeam.value = { ...team }
+  editTeam.value = {
+    id: team.id,
+    name: team.name,
+    managerID: team.managerID,
+    members: [...team.members]
+  }
+  showEditForm.value = true
+}
+
+// Close edit team form
+const closeEditForm = () => {
+  showEditForm.value = false
+  editTeam.value = {
+    id: null,
+    name: '',
+    managerID: null,
+    members: []
+  }
+  originalTeam.value = null
+  error.value = ''
+}
+
+// Get available managers for editing (excluding current manager unless it's the same team)
+const availableManagersForEdit = computed(() => {
+  const assignedIds = getAssignedUserIds()
+  
+  return users.value.filter(user => {
+    if (user.type !== 'manager') return false
+    
+    // If this is the current manager of the team being edited, allow it
+    if (originalTeam.value && user.id === originalTeam.value.managerID) {
+      return true
+    }
+    
+    // Otherwise, only show unassigned managers
+    return !assignedIds.has(user.id)
+  })
+})
+
+// Get available developers for editing (excluding current members unless they're in the same team)
+const availableDevelopersForEdit = computed(() => {
+  const assignedIds = getAssignedUserIds()
+  
+  return users.value.filter(user => {
+    if (user.type !== 'dev') return false
+    
+    // If this developer is already in the team being edited, allow them
+    if (originalTeam.value && originalTeam.value.members.includes(user.id)) {
+      return true
+    }
+    
+    // Otherwise, only show unassigned developers
+    return !assignedIds.has(user.id)
+  })
+})
+
+// Update existing team
+const updateExistingTeam = async () => {
+  try {
+    // Validation
+    if (!editTeam.value.name.trim()) {
+      error.value = 'Team name is required'
+      return
+    }
+    
+    if (!editTeam.value.managerID) {
+      error.value = 'Please select a manager'
+      return
+    }
+    
+    if (editTeam.value.members.length === 0) {
+      error.value = 'Please select at least one developer'
+      return
+    }
+    
+    editingTeam.value = true
+    error.value = ''
+    
+    const teamData = {
+      name: editTeam.value.name.trim(),
+      managerID: editTeam.value.managerID,
+      members: editTeam.value.members
+    }
+    
+    await updateTeam(editTeam.value.id, teamData)
+    
+    // Reload teams to show the updated team
+    if (currentUser.value?.type === 'admin') {
+      await loadAllTeams()
+    }
+    
+    successMessage.value = `Team "${teamData.name}" updated successfully!`
+    closeEditForm()
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+    
+  } catch (err) {
+    error.value = 'Failed to update team'
+    console.error('Error updating team:', err)
+  } finally {
+    editingTeam.value = false
+  }
+}
 </script>
 
 <template>
@@ -276,7 +397,17 @@ const getUserName = (userId) => {
           :team-projects="getTeamProjects(team.id)"
           :show-manager-info="currentUser?.type === 'admin'"
           :users="users"
-        />
+        >
+          <template #actions>
+            <Button 
+              v-if="currentUser?.type === 'admin'"
+              @click="openEditForm(team)"
+              variant="secondary"
+              label="Edit Team"
+              size="small"
+            />
+          </template>
+        </TeamCard>
       </div>
     </div>
     
@@ -345,6 +476,77 @@ const getUserName = (userId) => {
         />
         <Button 
           @click="closeCreateForm" 
+          variant="secondary"
+          label="Cancel"
+        />
+      </template>
+    </Modal>
+    
+    <!-- Edit Team Modal -->
+    <Modal 
+      :is-visible="showEditForm" 
+      title="Edit Team"
+      @close="closeEditForm"
+    >
+      <Alert :message="error" type="error" />
+      
+      <FormGroup label="Team Name" input-id="editTeamName">
+        <input 
+          v-model="editTeam.name" 
+          type="text" 
+          id="editTeamName" 
+          class="form-control"
+          placeholder="Enter team name"
+        />
+      </FormGroup>
+      
+      <FormGroup label="Manager" input-id="editManagerID">
+        <select 
+          v-model="editTeam.managerID" 
+          id="editManagerID" 
+          class="form-control"
+        >
+          <option value="">Select a manager</option>
+          <option 
+            v-for="manager in availableManagersForEdit" 
+            :key="manager.id" 
+            :value="manager.id"
+          >
+            {{ getUserName(manager.id) }}
+          </option>
+        </select>
+      </FormGroup>
+      
+      <FormGroup label="Developers">
+        <div class="developers-list">
+          <div 
+            v-for="developer in availableDevelopersForEdit" 
+            :key="developer.id" 
+            class="developer-item"
+          >
+            <input 
+              type="checkbox" 
+              :id="'edit-dev-' + developer.id" 
+              :value="developer.id"
+              v-model="editTeam.members"
+              class="developer-checkbox"
+            />
+            <label :for="'edit-dev-' + developer.id" class="developer-label">
+              {{ getUserName(developer.id) }}
+            </label>
+          </div>
+        </div>
+      </FormGroup>
+      
+      <template #footer>
+        <Button 
+          @click="updateExistingTeam" 
+          variant="success"
+          label="Update Team"
+          :loading="editingTeam"
+        />
+        <Button 
+          @click="closeEditForm" 
           variant="secondary"
           label="Cancel"
         />
