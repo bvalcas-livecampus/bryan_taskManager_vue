@@ -1,9 +1,8 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, inject } from 'vue'
 import { fetchTeams, fetchTeamsByManager, createTeam, updateTeam } from '../../api/teams.js'
 import { fetchProjects } from '../../api/projects.js'
 import { fetchUsers } from '../../api/users.js'
-import { getUser } from '../../db/user.js'
 
 // Import components
 import Modal from '../components/modal/Modal.vue'
@@ -19,7 +18,7 @@ import Button from '../components/button/button.vue'
 const teams = ref([])
 const projects = ref([])
 const users = ref([])
-const currentUser = ref(null)
+const currentUser = inject('user')
 const loading = ref(false)
 const error = ref('')
 const successMessage = ref('')
@@ -46,7 +45,6 @@ const originalTeam = ref(null)
 
 onMounted(async () => {
   try {
-    currentUser.value = getUser()
     loading.value = true
     
     if (currentUser.value?.type === 'admin') {

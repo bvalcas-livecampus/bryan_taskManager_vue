@@ -1,8 +1,7 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, inject } from 'vue'
 import { fetchProjects, createProject, updateProject, deleteProject } from '../../api/projects.js'
 import { fetchTeams, fetchTeamsByManager } from '../../api/teams.js'
-import { getUser } from '../../db/user.js'
 
 // Import components
 import Modal from '../components/modal/Modal.vue'
@@ -18,7 +17,7 @@ import Input from '../components/input/input.vue'
 // Reactive data
 const projects = ref([])
 const teams = ref([])
-const currentUser = ref(null)
+const currentUser = inject('user')
 const showCreateForm = ref(false)
 const editingProject = ref(null)
 
@@ -75,8 +74,6 @@ const closeCreateForm = () => {
 // Get current user and their teams
 onMounted(async () => {
   try {
-    currentUser.value = getUser()
-    
     if (currentUser.value?.type === 'admin') {
       await loadAllTeams()
       await loadAllProjects()

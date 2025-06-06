@@ -1,8 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, inject } from 'vue'
 import { fetchUsers, updateUser, createUser, deleteUser } from '../../api/users.js'
 import { fetchTeamsByMember } from '../../api/teams.js'
-import { getUser } from '../../db/user.js'
 
 // Import components
 import Modal from '../components/modal/Modal.vue'
@@ -13,7 +12,7 @@ import Input from '../components/input/input.vue'
 
 // Reactive data
 const users = ref([])
-const currentUser = ref(null)
+const currentUser = inject('user')
 const loading = ref(false)
 const error = ref('')
 const successMessage = ref('')
@@ -35,7 +34,6 @@ const userTypes = ['dev', 'manager', 'admin']
 
 onMounted(async () => {
   try {
-    currentUser.value = getUser()
     await loadUsers()
   } catch (err) {
     error.value = 'Failed to load users'

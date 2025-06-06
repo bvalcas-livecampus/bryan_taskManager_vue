@@ -1,10 +1,9 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { ref, onMounted, computed, watch, inject } from 'vue'
 import { fetchTasks, createTask, updateTask, deleteTask } from '../../api/tasks.js'
 import { fetchProjects } from '../../api/projects.js'
 import { fetchUsers } from '../../api/users.js'
 import { fetchTeamsByManager, fetchTeams } from '../../api/teams.js'
-import { getUser } from '../../db/user.js'
 
 // Import components
 import Modal from '../components/modal/Modal.vue'
@@ -21,7 +20,7 @@ const tasks = ref([])
 const projects = ref([])
 const users = ref([])
 const teams = ref([])
-const currentUser = ref(null)
+const currentUser = inject('user')
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
 const editingTask = ref(null)
@@ -373,7 +372,6 @@ const handleDeleteTask = async (taskId) => {
 // Lifecycle
 onMounted(async () => {
   try {
-    currentUser.value = getUser()
     loading.value = true
     
     await Promise.all([
