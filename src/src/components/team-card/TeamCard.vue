@@ -17,9 +17,12 @@
     
     <!-- Projects assigned to this team -->
     <div class="team-projects">
-      <h4>Assigned Projects</h4>
+      <h4>Assigned Projects ({{ teamProjects.length }})</h4>
       <div v-if="teamProjects.length === 0" class="no-projects">
-        <p>No projects assigned to this team yet.</p>
+        <div class="empty-state">
+          <span class="empty-icon">📁</span>
+          <p>No projects assigned yet</p>
+        </div>
       </div>
       <div v-else class="projects-list">
         <div 
@@ -27,8 +30,10 @@
           :key="project.id"
           class="project-item"
         >
-          <span class="project-name">{{ project.project_name }}</span>
-          <span class="project-id">#{{ project.id }}</span>
+          <div class="project-header">
+            <span class="project-name">{{ project.project_name }}</span>
+            <span class="project-id">#{{ project.id }}</span>
+          </div>
         </div>
       </div>
     </div>
@@ -153,6 +158,27 @@ const props = defineProps({
   color: #2d3748;
   font-size: 1rem;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.no-projects {
+  margin: 0.5rem 0;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.6;
 }
 
 .no-projects p {
@@ -160,28 +186,41 @@ const props = defineProps({
   font-style: italic;
   font-size: 0.875rem;
   margin: 0;
-  text-align: left;
 }
 
 .projects-list {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.75rem;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 0.25rem;
 }
 
 .project-item {
+  background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  transition: all 0.2s;
+}
+
+.project-item:hover {
+  transform: translateX(2px);
+  border-color: #cbd5e0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.project-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem 0.75rem;
-  background: #f7fafc;
-  border-radius: 6px;
-  border: 1px solid #e2e8f0;
 }
 
 .project-name {
   color: #2d3748;
-  font-weight: 500;
+  font-weight: 600;
+  font-size: 0.9rem;
   flex: 1;
 }
 
@@ -189,9 +228,28 @@ const props = defineProps({
   background: #e2e8f0;
   color: #4a5568;
   padding: 0.125rem 0.375rem;
-  border-radius: 3px;
+  border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 500;
+}
+
+.project-status {
+  display: flex;
+  align-items: center;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.active {
+  background: #c6f6d5;
+  color: #22543d;
 }
 
 /* Team Stats */

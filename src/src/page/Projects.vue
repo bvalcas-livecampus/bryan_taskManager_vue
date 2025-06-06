@@ -3,6 +3,15 @@ import { ref, onMounted, computed } from 'vue'
 import { fetchProjects, createProject, updateProject, deleteProject } from '../../api/projects.js'
 import { fetchTeams, fetchTeamsByManager } from '../../api/teams.js'
 import { getUser } from '../../db/user.js'
+
+// Import components
+import Modal from '../components/modal/Modal.vue'
+import Alert from '../components/alert/Alert.vue'
+import Loading from '../components/loading/Loading.vue'
+import PageHeader from '../components/page-header/PageHeader.vue'
+import EmptyState from '../components/empty-state/EmptyState.vue'
+import FormGroup from '../components/form/FormGroup.vue'
+import ProjectCard from '../components/project-card/ProjectCard.vue'
 import Button from '../components/button/button.vue'
 import Input from '../components/input/input.vue'
 
@@ -21,14 +30,57 @@ const newProject = ref({
 
 // Loading states
 const loading = ref(false)
+const creatingProject = ref(false)
 const error = ref('')
 const success = ref('')
+
+// Get page title and subtitle
+const getPageTitle = () => {
+  if (currentUser.value?.type === 'admin') {
+    return 'All Projects Management'
+  } else if (currentUser.value?.type === 'manager') {
+    return 'My Team Projects'
+  }
+  return 'Projects Management'
+}
+
+const getPageSubtitle = () => {
+  if (currentUser.value?.type === 'admin') {
+    return 'Manage all projects across all teams'
+  } else if (currentUser.value?.type === 'manager') {
+    return 'Manage projects for your teams'
+  }
+  return 'Manage your team projects'
+}
+
+// Open create project form
+const openCreateForm = () => {
+  newProject.value = {
+    project_name: '',
+    team_id: null
+  }
+  showCreateForm.value = true
+}
+
+// Close create project form
+const closeCreateForm = () => {
+  showCreateForm.value = false
+  newProject.value = {
+    project_name: '',
+    team_id: null
+  }
+  error.value = ''
+}
 
 // Get current user and their teams
 onMounted(async () => {
   try {
     currentUser.value = getUser()
-    if (currentUser.value?.type === 'manager') {
+    
+    if (currentUser.value?.type === 'admin') {
+      await loadAllTeams()
+      await loadAllProjects()
+    } else if (currentUser.value?.type === 'manager') {
       await loadManagerTeams()
       await loadProjects()
     }
@@ -50,6 +102,16 @@ const loadManagerTeams = async () => {
   }
 }
 
+// Load all teams (for admins)
+const loadAllTeams = async () => {
+  try {
+    teams.value = await fetchTeams()
+  } catch (err) {
+    console.error('Error loading teams:', err)
+    error.value = 'Failed to load teams'
+  }
+}
+
 // Load all projects (filtered by manager's teams)
 const loadProjects = async () => {
   try {
@@ -57,6 +119,19 @@ const loadProjects = async () => {
     const allProjects = await fetchProjects()
     const teamIds = teams.value.map(team => team.id)
     projects.value = allProjects.filter(project => teamIds.includes(project.team_id))
+  } catch (err) {
+    console.error('Error loading projects:', err)
+    error.value = 'Failed to load projects'
+  } finally {
+    loading.value = false
+  }
+}
+
+// Load all projects (for admins)
+const loadAllProjects = async () => {
+  try {
+    loading.value = true
+    projects.value = await fetchProjects()
   } catch (err) {
     console.error('Error loading projects:', err)
     error.value = 'Failed to load projects'
@@ -79,7 +154,7 @@ const handleCreateProject = async () => {
   }
 
   try {
-    loading.value = true
+    creatingProject.value = true
     error.value = ''
     
     const projectData = {
@@ -90,17 +165,15 @@ const handleCreateProject = async () => {
     const createdProject = await createProject(projectData)
     projects.value.push(createdProject)
     
-    // Reset form
-    newProject.value = { project_name: '', team_id: null }
-    showCreateForm.value = false
     success.value = 'Project created successfully!'
+    closeCreateForm()
     
     setTimeout(() => { success.value = '' }, 3000)
   } catch (err) {
     console.error('Error creating project:', err)
     error.value = 'Failed to create project'
   } finally {
-    loading.value = false
+    creatingProject.value = false
   }
 }
 
@@ -176,174 +249,115 @@ const handleDeleteProject = async (projectId) => {
 
 // Cancel create form
 const cancelCreate = () => {
-  showCreateForm.value = false
-  newProject.value = { project_name: '', team_id: null }
-  error.value = ''
+  closeCreateForm()
 }
 </script>
 
 <template>
   <div class="projects-container">
-    <h1>Projects Management</h1>
-    <p class="subtitle">Manage your team projects</p>
+    <PageHeader :title="getPageTitle()" :subtitle="getPageSubtitle()">
+      <template #actions>
+        <Button 
+          @click="openCreateForm"
+          variant="primary"
+          label="+ Create New Project"
+        />
+      </template>
+    </PageHeader>
     
     <!-- Alert Messages -->
-    <div v-if="error" class="alert alert-error">
-      {{ error }}
-    </div>
-    <div v-if="success" class="alert alert-success">
-      {{ success }}
-    </div>
+    <Alert :message="error" type="error" />
+    <Alert :message="success" type="success" />
     
     <div class="projects-content">
-      <!-- Actions Header -->
-      <div class="actions-header">
-        <h2>Your Projects</h2>
-        <Button 
-          label="+ Create New Project" 
-          type="button"
-          @click="showCreateForm = true"
-          v-if="!showCreateForm"
+      <!-- Loading State -->
+      <Loading :is-loading="loading" message="Loading projects..." />
+      
+      <!-- No Projects -->
+      <EmptyState 
+        v-if="!loading && projects.length === 0"
+        title="No Projects Found"
+        message="No projects have been created yet."
+        icon="📁"
+      >
+        <template #action>
+          <Button 
+            @click="openCreateForm"
+            variant="primary"
+            label="Create First Project"
+          />
+        </template>
+      </EmptyState>
+      
+      <!-- Projects Grid -->
+      <div v-else-if="!loading" class="projects-grid">
+        <ProjectCard
+          v-for="project in projects"
+          :key="project.id"
+          :project="project"
+          :teams="teams"
+          :is-editing="editingProject && editingProject.id === project.id"
+          :edit-data="editingProject"
+          :loading="loading"
+          @edit="startEdit(project)"
+          @delete="handleDeleteProject(project.id)"
+          @save="saveEdit"
+          @cancel="cancelEdit"
+          @update-name="editingProject.project_name = $event"
+          @update-team="editingProject.team_id = $event"
         />
       </div>
-
-      <!-- Create Project Form -->
-      <div v-if="showCreateForm" class="create-form">
-        <h3>Create New Project</h3>
-        <div class="form-group">
-          <Input
-            id="project-name"
-            name="project-name"
-            label="Project Name"
-            placeholder="Enter project name"
-            :value="newProject.project_name"
-            @update="newProject.project_name = $event"
-          />
-        </div>
-        
-        <div class="form-group">
-          <label for="team-select">Assign Team</label>
-          <select 
-            id="team-select" 
-            v-model="newProject.team_id"
-            class="team-select"
-          >
-            <option value="">Select a team</option>
-            <option 
-              v-for="team in teams" 
-              :key="team.id" 
-              :value="team.id"
-            >
-              {{ team.name }} ({{ team.members.length }} members)
-            </option>
-          </select>
-        </div>
-        
-        <div class="form-actions">
-          <Button 
-            label="Create Project" 
-            type="button"
-            @click="handleCreateProject"
-            :disabled="loading"
-          />
-          <Button 
-            label="Cancel" 
-            type="button"
-            @click="cancelCreate"
-          />
-        </div>
-      </div>
-
-      <!-- Projects List -->
-      <div class="projects-list">
-        <div v-if="loading" class="loading">
-          Loading projects...
-        </div>
-        
-        <div v-else-if="projects.length === 0" class="no-projects">
-          <p>No projects found. Create your first project!</p>
-        </div>
-        
-        <div v-else class="projects-grid">
-          <div 
-            v-for="project in projects" 
-            :key="project.id" 
-            class="project-card"
-          >
-            <!-- Edit Mode -->
-            <div v-if="editingProject && editingProject.id === project.id" class="edit-mode">
-              <div class="form-group">
-                <Input
-                  id="edit-project-name"
-                  name="edit-project-name"
-                  label="Project Name"
-                  :value="editingProject.project_name"
-                  @update="editingProject.project_name = $event"
-                />
-              </div>
-              
-              <div class="form-group">
-                <label for="edit-team-select">Assigned Team</label>
-                <select 
-                  id="edit-team-select" 
-                  v-model="editingProject.team_id"
-                  class="team-select"
-                >
-                  <option 
-                    v-for="team in teams" 
-                    :key="team.id" 
-                    :value="team.id"
-                  >
-                    {{ team.name }} ({{ team.members.length }} members)
-                  </option>
-                </select>
-              </div>
-              
-              <div class="card-actions">
-                <Button 
-                  label="Save" 
-                  type="button"
-                  @click="saveEdit"
-                  :disabled="loading"
-                />
-                <Button 
-                  label="Cancel" 
-                  type="button"
-                  @click="cancelEdit"
-                />
-              </div>
-            </div>
-            
-            <!-- View Mode -->
-            <div v-else class="view-mode">
-              <h3 class="project-name">{{ project.project_name }}</h3>
-              <div class="project-info">
-                <p class="team-info">
-                  <strong>Team:</strong> {{ getTeamName(project.team_id) }}
-                </p>
-                <p class="project-id">
-                  <strong>ID:</strong> #{{ project.id }}
-                </p>
-              </div>
-              
-              <div class="card-actions">
-                <Button 
-                  label="Edit" 
-                  type="button"
-                  @click="startEdit(project)"
-                />
-                <Button 
-                  label="Delete" 
-                  type="button"
-                  @click="handleDeleteProject(project.id)"
-                  class="delete-btn"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
+    
+    <!-- Create Project Modal -->
+    <Modal 
+      :is-visible="showCreateForm" 
+      title="Create New Project"
+      @close="closeCreateForm"
+    >
+      <Alert :message="error" type="error" />
+      
+      <FormGroup label="Project Name" input-id="projectName">
+        <Input
+          id="projectName"
+          name="projectName"
+          :value="newProject.project_name"
+          @update="newProject.project_name = $event"
+          placeholder="Enter project name"
+        />
+      </FormGroup>
+      
+      <FormGroup label="Assign Team" input-id="teamSelect">
+        <select 
+          id="teamSelect" 
+          v-model="newProject.team_id"
+          class="form-control"
+        >
+          <option value="">Select a team</option>
+          <option 
+            v-for="team in teams" 
+            :key="team.id" 
+            :value="team.id"
+          >
+            {{ team.name }} ({{ team.members.length }} members)
+          </option>
+        </select>
+      </FormGroup>
+      
+      <template #footer>
+        <Button 
+          @click="handleCreateProject" 
+          variant="success"
+          label="Create Project"
+          :loading="creatingProject"
+        />
+        <Button 
+          @click="closeCreateForm" 
+          variant="secondary"
+          label="Cancel"
+        />
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -354,117 +368,6 @@ const cancelCreate = () => {
   margin: 0 auto;
 }
 
-.subtitle {
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-/* Alert Messages */
-.alert {
-  padding: 1rem;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  font-weight: 500;
-}
-
-.alert-error {
-  background-color: #fee;
-  color: #c53030;
-  border: 1px solid #fed7d7;
-}
-
-.alert-success {
-  background-color: #f0fff4;
-  color: #22543d;
-  border: 1px solid #c6f6d5;
-}
-
-/* Actions Header */
-.actions-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e2e8f0;
-}
-
-.actions-header h2 {
-  margin: 0;
-  color: #2d3748;
-}
-
-/* Create Form */
-.create-form {
-  background: #f7fafc;
-  padding: 2rem;
-  border-radius: 8px;
-  margin-bottom: 2rem;
-  border: 1px solid #e2e8f0;
-}
-
-.create-form h3 {
-  margin-top: 0;
-  margin-bottom: 1.5rem;
-  color: #2d3748;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #4a5568;
-}
-
-.team-select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 1rem;
-  background-color: white;
-  transition: border-color 0.2s;
-}
-
-.team-select:focus {
-  outline: none;
-  border-color: #3182ce;
-  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
-}
-
-.form-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2rem;
-}
-
-/* Projects List */
-.projects-list {
-  margin-top: 2rem;
-}
-
-.loading {
-  text-align: center;
-  padding: 2rem;
-  color: #718096;
-  font-style: italic;
-}
-
-.no-projects {
-  text-align: center;
-  padding: 3rem;
-  color: #718096;
-}
-
-.no-projects p {
-  font-size: 1.1rem;
-  margin: 0;
-}
-
 /* Projects Grid */
 .projects-grid {
   display: grid;
@@ -473,90 +376,20 @@ const cancelCreate = () => {
   margin-top: 1rem;
 }
 
-.project-card {
-  background: white;
+/* Form Controls */
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
   border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 1.5rem;
-  transition: all 0.2s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.project-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-/* View Mode */
-.project-name {
-  margin: 0 0 1rem 0;
-  color: #2d3748;
-  font-size: 1.25rem;
-}
-
-.project-info {
-  margin-bottom: 1.5rem;
-}
-
-.project-info p {
-  margin: 0.5rem 0;
-  color: #4a5568;
-}
-
-.team-info {
-  font-size: 1rem;
-}
-
-.project-id {
-  font-size: 0.875rem;
-  color: #718096;
-}
-
-/* Edit Mode */
-.edit-mode {
-  border: 2px solid #3182ce;
-  border-radius: 8px;
-  padding: 1rem;
-  background: #f7fafc;
-}
-
-/* Card Actions */
-.card-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-.card-actions button {
-  flex: 1;
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
   border-radius: 4px;
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s;
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  color: #2d3748;
 }
 
-.card-actions button:hover {
-  background: #f7fafc;
-  border-color: #a0aec0;
-}
-
-.card-actions button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.delete-btn {
-  background: #fed7d7 !important;
-  color: #c53030 !important;
-  border-color: #feb2b2 !important;
-}
-
-.delete-btn:hover {
-  background: #feb2b2 !important;
-  border-color: #fc8181 !important;
+.form-control:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
 }
 
 /* Responsive Design */
@@ -565,22 +398,8 @@ const cancelCreate = () => {
     padding: 1rem;
   }
   
-  .actions-header {
-    flex-direction: column;
-    gap: 1rem;
-    align-items: stretch;
-  }
-  
   .projects-grid {
     grid-template-columns: 1fr;
-  }
-  
-  .form-actions {
-    flex-direction: column;
-  }
-  
-  .card-actions {
-    flex-direction: column;
   }
 }
 </style>
