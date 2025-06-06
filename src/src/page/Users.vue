@@ -1,7 +1,14 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { fetchUsers, updateUser } from '../../api/users.js'
+import { fetchUsers, updateUser, createUser } from '../../api/users.js'
 import { getUser } from '../../db/user.js'
+
+// Import components
+import Modal from '../components/modal/Modal.vue'
+import Alert from '../components/alert/Alert.vue'
+import FormGroup from '../components/form/FormGroup.vue'
+import Button from '../components/button/button.vue'
+import Input from '../components/input/input.vue'
 
 // Reactive data
 const users = ref([])
@@ -10,6 +17,17 @@ const loading = ref(false)
 const error = ref('')
 const successMessage = ref('')
 const editingUser = ref(null)
+
+// Create user form
+const showCreateForm = ref(false)
+const creatingUser = ref(false)
+const newUser = ref({
+  first_name: '',
+  last_name: '',
+  email: '',
+  password: '',
+  type: 'dev'
+})
 
 // User types available for selection
 const userTypes = ['dev', 'manager', 'admin']
@@ -98,12 +116,120 @@ const canEditUser = (user) => {
   // Admins can edit anyone except themselves
   return currentUser.value?.type === 'admin' && user.id !== currentUser.value?.id
 }
+
+// Open create user form
+const openCreateForm = () => {
+  newUser.value = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    type: 'dev'
+  }
+  showCreateForm.value = true
+  error.value = ''
+}
+
+// Close create user form
+const closeCreateForm = () => {
+  showCreateForm.value = false
+  newUser.value = {
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    type: 'dev'
+  }
+  error.value = ''
+}
+
+// Create new user
+const handleCreateUser = async () => {
+  try {
+    // Validation
+    if (!newUser.value.first_name.trim()) {
+      error.value = 'First name is required'
+      return
+    }
+    
+    if (!newUser.value.last_name.trim()) {
+      error.value = 'Last name is required'
+      return
+    }
+    
+    if (!newUser.value.email.trim()) {
+      error.value = 'Email is required'
+      return
+    }
+    
+    if (!newUser.value.password.trim()) {
+      error.value = 'Password is required'
+      return
+    }
+    
+    if (newUser.value.password.length < 6) {
+      error.value = 'Password must be at least 6 characters long'
+      return
+    }
+    
+    // Check if email already exists
+    const existingUser = users.value.find(u => u.email.toLowerCase() === newUser.value.email.toLowerCase())
+    if (existingUser) {
+      error.value = 'A user with this email already exists'
+      return
+    }
+    
+    creatingUser.value = true
+    error.value = ''
+    
+    const userData = {
+      first_name: newUser.value.first_name.trim(),
+      last_name: newUser.value.last_name.trim(),
+      email: newUser.value.email.trim(),
+      password: newUser.value.password,
+      type: newUser.value.type
+    }
+    
+    const createdUser = await createUser(userData)
+    
+    // Reload users list to get fresh data from server
+    await loadUsers()
+    
+    successMessage.value = `User "${userData.first_name} ${userData.last_name}" created successfully!`
+    closeCreateForm()
+    
+    // Clear success message after 3 seconds
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+    
+  } catch (err) {
+    console.error('Error creating user:', err)
+    error.value = 'Failed to create user. Please try again.'
+  } finally {
+    creatingUser.value = false
+  }
+}
 </script>
 
 <template>
   <div class="users-container">
-    <h1>Users Management</h1>
-    <p class="subtitle">Manage system users and their roles</p>
+    <div class="users-header">
+      <div class="header-content">
+        <div class="header-text">
+          <h1>Users Management</h1>
+          <p class="subtitle">Manage system users and their roles</p>
+        </div>
+        <div class="header-actions">
+          <Button 
+            v-if="currentUser?.type === 'admin'" 
+            @click="openCreateForm"
+            variant="primary"
+            label="+ Create New User"
+          />
+        </div>
+      </div>
+    </div>
     
     <!-- Error Message -->
     <div v-if="error" class="alert alert-error">
@@ -150,14 +276,14 @@ const canEditUser = (user) => {
                 <div v-if="editingUser && editingUser.id === user.id" class="type-edit">
                   <select v-model="editingUser.type" class="type-select">
                     <option v-for="type in userTypes" :key="type" :value="type">
-                      {{ type.charAt(0).toUpperCase() + type.slice(1) }}
+                      {{ type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Unknown' }}
                     </option>
                   </select>
                 </div>
                 <!-- Show type badge if not editing -->
                 <div v-else class="type-badge-container">
                   <span :class="['type-badge', getUserTypeBadgeClass(user.type)]">
-                    {{ user.type.charAt(0).toUpperCase() + user.type.slice(1) }}
+                    {{ user.type ? user.type.charAt(0).toUpperCase() + user.type.slice(1) : 'Unknown' }}
                   </span>
                 </div>
               </td>
@@ -222,6 +348,83 @@ const canEditUser = (user) => {
         </div>
       </div>
     </div>
+    
+    <!-- Create User Modal -->
+    <Modal 
+      :is-visible="showCreateForm" 
+      title="Create New User"
+      @close="closeCreateForm"
+    >
+      <Alert :message="error" type="error" />
+      
+      <FormGroup label="First Name" input-id="firstName">
+        <Input
+          id="firstName"
+          name="firstName"
+          :value="newUser.first_name"
+          @update="newUser.first_name = $event"
+          placeholder="Enter first name"
+        />
+      </FormGroup>
+      
+      <FormGroup label="Last Name" input-id="lastName">
+        <Input
+          id="lastName"
+          name="lastName"
+          :value="newUser.last_name"
+          @update="newUser.last_name = $event"
+          placeholder="Enter last name"
+        />
+      </FormGroup>
+      
+      <FormGroup label="Email Address" input-id="email">
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          :value="newUser.email"
+          @update="newUser.email = $event"
+          placeholder="Enter email address"
+        />
+      </FormGroup>
+      
+      <FormGroup label="Password" input-id="password">
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          :value="newUser.password"
+          @update="newUser.password = $event"
+          placeholder="Enter password (min. 6 characters)"
+        />
+      </FormGroup>
+      
+      <FormGroup label="User Type" input-id="userType">
+        <select 
+          v-model="newUser.type" 
+          id="userType" 
+          class="form-control"
+        >
+          <option v-for="type in userTypes" :key="type" :value="type">
+            {{ type ? type.charAt(0).toUpperCase() + type.slice(1) : 'Unknown' }}
+          </option>
+        </select>
+      </FormGroup>
+      
+      <template #footer>
+        <Button 
+          @click="handleCreateUser" 
+          variant="success"
+          label="Create User"
+          :loading="creatingUser"
+        />
+        <Button 
+          @click="closeCreateForm" 
+          variant="secondary"
+          label="Cancel"
+        />
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -232,9 +435,27 @@ const canEditUser = (user) => {
   margin: 0 auto;
 }
 
+.users-header {
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.header-text h1 {
+  margin: 0 0 0.5rem 0;
+  color: #2d3748;
+  font-size: 2rem;
+  font-weight: 700;
+}
+
 .subtitle {
   color: #666;
-  margin-bottom: 2rem;
+  margin: 0;
 }
 
 /* Alert Messages */
@@ -489,10 +710,35 @@ const canEditUser = (user) => {
   color: #2d3748;
 }
 
+/* Form Controls */
+.form-control {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  color: #2d3748;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3182ce;
+  box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .users-container {
     padding: 1rem;
+  }
+  
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .header-text h1 {
+    font-size: 1.75rem;
   }
   
   .users-table-container {
