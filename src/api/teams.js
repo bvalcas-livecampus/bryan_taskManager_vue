@@ -31,6 +31,19 @@ export const fetchTeamsByManager = async (managerId) => {
   }
 }
 
+// Fetch teams that contain a specific user as a member
+export const fetchTeamsByMember = async (userId) => {
+  try {
+    const teams = await fetchTeams()
+    return teams.filter(team => 
+      team.members && team.members.includes(parseInt(userId))
+    )
+  } catch (err) {
+    console.error('Error fetching teams by member:', err)
+    throw err
+  }
+}
+
 // Get team by ID
 export const getTeamById = async (teamId) => {
   try {
@@ -130,6 +143,27 @@ export const removeMemberFromTeam = async (teamId, userId) => {
     return await updateTeam(teamId, { members: updatedMembers })
   } catch (err) {
     console.error('Error removing member from team:', err)
+    throw err
+  }
+}
+
+// Remove user from all teams (utility for user deletion)
+export const removeUserFromAllTeams = async (userId) => {
+  try {
+    const teams = await fetchTeams()
+    const teamsToUpdate = teams.filter(team => 
+      team.members && team.members.includes(parseInt(userId))
+    )
+    
+    const updatePromises = teamsToUpdate.map(team => {
+      const updatedMembers = team.members.filter(memberId => memberId !== parseInt(userId))
+      return updateTeam(team.id, { members: updatedMembers })
+    })
+    
+    await Promise.all(updatePromises)
+    return teamsToUpdate // Return the teams that were updated
+  } catch (err) {
+    console.error('Error removing user from all teams:', err)
     throw err
   }
 }

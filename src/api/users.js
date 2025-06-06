@@ -1,6 +1,9 @@
 // Users API functions
 const API_BASE_URL = 'http://localhost:3000'
 
+// Import team utility for cleanup
+import { removeUserFromAllTeams } from './teams.js'
+
 // Fetch all users
 export const fetchUsers = async () => {
   try {
@@ -90,9 +93,13 @@ export const updateUser = async (userId, updates) => {
   }
 }
 
-// Delete user
+// Delete user and remove from all teams
 export const deleteUser = async (userId) => {
   try {
+    // Remove user from all teams first
+    await removeUserFromAllTeams(userId)
+    
+    // Then delete the user
     const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
       method: 'DELETE'
     })

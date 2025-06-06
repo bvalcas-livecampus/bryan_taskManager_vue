@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { fetchUsers, updateUser, createUser, deleteUser } from '../../api/users.js'
+import { fetchTeamsByMember } from '../../api/teams.js'
 import { getUser } from '../../db/user.js'
 
 // Import components
@@ -213,24 +214,36 @@ const handleCreateUser = async () => {
 
 // Delete user
 const handleDeleteUser = async (user) => {
-  // Create a detailed confirmation message
-  let confirmMessage = `Are you sure you want to delete user "${user.first_name} ${user.last_name}"?\n\n`
-  
-  // Add warnings based on user type
-  if (user.type === 'manager') {
-    confirmMessage += "⚠️ WARNING: This manager may be assigned to teams and will need to be replaced.\n"
-  } else if (user.type === 'dev') {
-    confirmMessage += "⚠️ WARNING: This developer may be assigned to tasks and teams.\n"
-  }
-  
-  confirmMessage += "\nThis action cannot be undone and may affect related data."
-
-  // Confirm deletion
-  if (!confirm(confirmMessage)) {
-    return
-  }
-
   try {
+    // First, check which teams this user belongs to
+    const userTeams = await fetchTeamsByMember(user.id)
+    
+    // Create a detailed confirmation message
+    let confirmMessage = `Are you sure you want to delete user "${user.first_name} ${user.last_name}"?\n\n`
+    
+    // Add warnings based on user type
+    if (user.type === 'manager') {
+      confirmMessage += "⚠️ WARNING: This manager may be assigned to teams and will need to be replaced.\n"
+    } else if (user.type === 'dev') {
+      confirmMessage += "⚠️ WARNING: This developer may be assigned to tasks and teams.\n"
+    }
+    
+    // Add team membership information
+    if (userTeams.length > 0) {
+      confirmMessage += `\n👥 This user is currently a member of ${userTeams.length} team(s):\n`
+      userTeams.forEach(team => {
+        confirmMessage += `   • ${team.name}\n`
+      })
+      confirmMessage += "\nThe user will be automatically removed from all teams.\n"
+    }
+    
+    confirmMessage += "\nThis action cannot be undone and may affect related data."
+
+    // Confirm deletion
+    if (!confirm(confirmMessage)) {
+      return
+    }
+
     loading.value = true
     error.value = ''
     successMessage.value = ''
@@ -240,12 +253,16 @@ const handleDeleteUser = async (user) => {
     // Remove the user from the local array
     users.value = users.value.filter(u => u.id !== user.id)
     
-    successMessage.value = `User "${user.first_name} ${user.last_name}" deleted successfully!`
+    let message = `User "${user.first_name} ${user.last_name}" deleted successfully!`
+    if (userTeams.length > 0) {
+      message += ` Removed from ${userTeams.length} team(s).`
+    }
+    successMessage.value = message
     
-    // Clear success message after 3 seconds
+    // Clear success message after 5 seconds for longer messages
     setTimeout(() => {
       successMessage.value = ''
-    }, 3000)
+    }, 5000)
     
   } catch (err) {
     console.error('Error deleting user:', err)

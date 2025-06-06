@@ -167,6 +167,22 @@
       "last_name": "valcasara",
       "type": "dev",
       "id": 21
+    },
+    {
+      "email": "test2@test.test",
+      "password": "$2a$10$NyggNQhzXlZ8.lZMj0XBNeEIOg86tna/qP4KhBalWVFbn4k7ZYCJm",
+      "first_name": "newuser",
+      "last_name": "aaaa",
+      "type": "dev",
+      "id": 22
+    },
+    {
+      "email": "test3@test.com",
+      "password": "$2a$10$GdBJ8UslXQFnx9Ty5UokwevUO9sxkDWgCg6HATtnEKK0RLHEbpuum",
+      "first_name": "mon manager",
+      "last_name": "larousse",
+      "type": "manager",
+      "id": 23
     }
   ],
   "teams": [
@@ -206,6 +222,15 @@
         20
       ],
       "managerID": 4
+    },
+    {
+      "name": "super team",
+      "managerID": 23,
+      "members": [
+        21,
+        22
+      ],
+      "id": 4
     }
   ],
   "Projects": [
@@ -243,6 +268,16 @@
       "project_name": "test",
       "team_id": 1,
       "id": 7
+    },
+    {
+      "project_name": "super projet",
+      "team_id": 4,
+      "id": 8
+    },
+    {
+      "project_name": "deuxieme projet",
+      "team_id": 4,
+      "id": 9
     }
   ],
   "tasks": [
@@ -268,7 +303,8 @@
       "label": "Mandatory foreground portal",
       "estimatedTime": 4,
       "step": 1,
-      "assignedTo": 6
+      "assignedTo": 6,
+      "description": "voici la description"
     },
     {
       "id": 4,
@@ -285,6 +321,51 @@
       "estimatedTime": 1,
       "step": 3,
       "assignedTo": 18
+    },
+    {
+      "label": "nouvelle tache",
+      "description": "ffffff",
+      "projectID": 8,
+      "assignedTo": 21,
+      "estimatedTime": 1,
+      "step": 3,
+      "id": 6
+    },
+    {
+      "label": "deuxieme nouvelle tache",
+      "description": "eeeee",
+      "projectID": 8,
+      "assignedTo": 22,
+      "estimatedTime": 1,
+      "step": 1,
+      "id": 7
+    },
+    {
+      "label": "3ieme nouvelle tache",
+      "description": "rrrr",
+      "projectID": 8,
+      "assignedTo": 24,
+      "estimatedTime": 1,
+      "step": 1,
+      "id": 8
+    },
+    {
+      "label": "4ieme tache",
+      "description": "",
+      "projectID": 9,
+      "assignedTo": 21,
+      "estimatedTime": 1,
+      "step": 1,
+      "id": 9
+    },
+    {
+      "label": "5ieme tache",
+      "description": "tttttt",
+      "projectID": 9,
+      "assignedTo": 21,
+      "estimatedTime": 1,
+      "step": 2,
+      "id": 10
     }
   ]
 }
