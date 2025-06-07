@@ -1,8 +1,9 @@
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
 import { fetchTasks, updateTaskStatus, updateTask } from '../../api/tasks.js'
-import { fetchProjects } from '../../api/projects.js'
+import { fetchProjects, fetchProjectsByTeam } from '../../api/projects.js'
 import { fetchUsers } from '../../api/users.js'
+import { fetchTeamsByManager } from '../../api/teams.js'
 import Modal from '../components/modal/Modal.vue'
 import FormGroup from '../components/form/FormGroup.vue'
 import Input from '../components/input/input.vue'
@@ -16,6 +17,8 @@ const user = inject('user')
 const tasks = ref([])
 const projects = ref([])
 const users = ref([])
+const teams = ref([])
+const managerProjectIds = ref([])
 const isLoading = ref(true)
 const error = ref(null)
 
@@ -54,6 +57,11 @@ const tasksByStatus = computed(() => {
 const userTasks = computed(() => {
   if (user.value?.type === 'dev') {
     return tasks.value.filter(task => task.assignedTo === user.value.id)
+  } else if (user.value?.type === 'manager') {
+    // Filter tasks that belong to projects managed by this manager
+    const filteredTasks = tasks.value.filter(task => managerProjectIds.value.includes(task.projectID))
+    console.log('Manager filtered tasks:', filteredTasks.length, 'out of', tasks.value.length)
+    return filteredTasks
   }
   return tasks.value
 })
@@ -98,6 +106,32 @@ const loadProjects = async () => {
     projects.value = await fetchProjects()
   } catch (err) {
     console.error('Error fetching projects:', err)
+  }
+}
+
+const loadTeams = async () => {
+  try {
+    if (user.value?.type === 'manager') {
+      teams.value = await fetchTeamsByManager(user.value.id)
+    }
+  } catch (err) {
+    console.error('Error fetching teams:', err)
+  }
+}
+
+const loadManagerProjects = async () => {
+  try {
+    if (user.value?.type === 'manager' && teams.value.length > 0) {
+      const projectIds = []
+      for (const team of teams.value) {
+        const teamProjects = await fetchProjectsByTeam(team.id)
+        projectIds.push(...teamProjects.map(project => project.id))
+      }
+      managerProjectIds.value = projectIds
+      console.log('Manager project IDs:', projectIds)
+    }
+  } catch (err) {
+    console.error('Error fetching manager projects:', err)
   }
 }
 
@@ -259,11 +293,20 @@ const saveTaskChanges = async () => {
 onMounted(async () => {
   isLoading.value = true
   try {
+    // Load basic data first
     await Promise.all([
-      loadTasks(),
-      loadProjects(),
-      loadUsers()
+      loadUsers(),
+      loadProjects()
     ])
+    
+    // Load teams for manager (if applicable)
+    if (user.value?.type === 'manager') {
+      await loadTeams()
+      await loadManagerProjects()
+    }
+    
+    // Finally load tasks
+    await loadTasks()
   } catch (err) {
     error.value = 'Failed to load data'
   } finally {
@@ -275,7 +318,7 @@ onMounted(async () => {
 <template>
   <div class="kanban-container">
     <div class="kanban-header">
-      <h1>{{ user?.type === 'dev' ? 'My Tasks' : 'Project Tasks' }} - Kanban Board</h1>
+      <h1>{{ user?.type === 'dev' ? 'My Tasks' : user?.type === 'manager' ? 'My Team Tasks' : 'Project Tasks' }} - Kanban Board</h1>
       <div v-if="error" class="error-message">
         {{ error }}
       </div>
@@ -296,7 +339,7 @@ onMounted(async () => {
         <div class="column-header" :style="{ borderTopColor: column.color }">
           <h3>{{ column.name }}</h3>
           <span class="task-count">
-            {{ user?.type === 'dev' ? 
+            {{ (user?.type === 'dev' || user?.type === 'manager') ? 
                 (userTasksByStatus[column.step]?.length || 0) : 
                 (tasksByStatus[column.step]?.length || 0) }}
           </span>
@@ -304,7 +347,7 @@ onMounted(async () => {
         
         <div class="column-content">
           <div 
-            v-for="task in (user?.type === 'dev' ? userTasksByStatus[column.step] : tasksByStatus[column.step])" 
+            v-for="task in ((user?.type === 'dev' || user?.type === 'manager') ? userTasksByStatus[column.step] : tasksByStatus[column.step])" 
             :key="task.id"
             class="task-card"
             :class="{ 'clickable': user?.type === 'dev' || user?.type === 'manager' }"
@@ -338,7 +381,7 @@ onMounted(async () => {
             </div>
           </div>
           
-          <div v-if="!(user?.type === 'dev' ? userTasksByStatus[column.step]?.length : tasksByStatus[column.step]?.length)" class="empty-column">
+          <div v-if="!((user?.type === 'dev' || user?.type === 'manager') ? userTasksByStatus[column.step]?.length : tasksByStatus[column.step]?.length)" class="empty-column">
             <p>No tasks in {{ column.name.toLowerCase() }}</p>
           </div>
         </div>
@@ -349,12 +392,12 @@ onMounted(async () => {
       <div class="stats">
         <div class="stat-item">
           <span class="stat-label">Total Tasks:</span>
-          <span class="stat-value">{{ user?.type === 'dev' ? userTasks.length : tasks.length }}</span>
+          <span class="stat-value">{{ (user?.type === 'dev' || user?.type === 'manager') ? userTasks.length : tasks.length }}</span>
         </div>
         <div class="stat-item">
           <span class="stat-label">In Progress:</span>
           <span class="stat-value">
-            {{ user?.type === 'dev' ? 
+            {{ (user?.type === 'dev' || user?.type === 'manager') ? 
                 (userTasksByStatus[3]?.length || 0) : 
                 (tasksByStatus[3]?.length || 0) }}
           </span>
@@ -362,7 +405,7 @@ onMounted(async () => {
         <div class="stat-item">
           <span class="stat-label">Completed:</span>
           <span class="stat-value">
-            {{ user?.type === 'dev' ? 
+            {{ (user?.type === 'dev' || user?.type === 'manager') ? 
                 (userTasksByStatus[5]?.length || 0) : 
                 (tasksByStatus[5]?.length || 0) }}
           </span>
