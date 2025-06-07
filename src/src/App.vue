@@ -61,7 +61,7 @@ if (isUserConnected.value) {
 </script>
 
 <template>
-    <header>
+    <header v-if="isUserConnected">
         <Header 
             :username="user?.first_name + ' ' + user?.last_name" 
             :isConnected="isUserConnected"
