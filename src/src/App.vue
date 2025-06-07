@@ -40,7 +40,7 @@ const connected = () => {
                 router.push('/kanban');
                 break;
             case 'manager':
-                router.push('/projects');
+                router.push('/dashboard');
                 break;
             case 'admin':
                 router.push('/users');

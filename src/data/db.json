@@ -361,16 +361,16 @@
       "projectID": 8,
       "assignedTo": 22,
       "estimatedTime": 1,
-      "step": 1,
+      "step": 2,
       "id": 7
     },
     {
       "label": "3ieme nouvelle tache",
       "description": "rrrr",
       "projectID": 8,
-      "assignedTo": 24,
+      "assignedTo": 22,
       "estimatedTime": 1,
-      "step": 1,
+      "step": 5,
       "id": 8
     },
     {
