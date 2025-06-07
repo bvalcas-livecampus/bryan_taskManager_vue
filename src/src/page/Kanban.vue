@@ -572,10 +572,6 @@ onMounted(async () => {
                 <strong>Status:</strong> Unassigned
               </p>
             </div>
-
-            <div class="task-footer">
-              <span class="task-id">#{{ task.id }}</span>
-            </div>
           </div>
           
           <div v-if="!((user?.type === 'dev' || user?.type === 'manager') ? userTasksByStatus[column.step]?.length : tasksByStatus[column.step]?.length)" class="empty-column">
