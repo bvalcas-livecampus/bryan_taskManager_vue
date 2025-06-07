@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
-import { fetchTasks, updateTaskStatus, updateTask, deleteTask } from '../../api/tasks.js'
+import { fetchTasks, updateTaskStatus, updateTask, deleteTask, createTask } from '../../api/tasks.js'
 import { fetchProjects, fetchProjectsByTeam } from '../../api/projects.js'
 import { fetchUsers } from '../../api/users.js'
 import { fetchTeamsByManager } from '../../api/teams.js'
@@ -36,6 +36,19 @@ const editFormData = ref({
 const isUpdatingTask = ref(false)
 const isDeletingTask = ref(false)
 const updateError = ref('')
+
+// Create task modal state
+const showCreateModal = ref(false)
+const createFormData = ref({
+  label: '',
+  description: '',
+  step: 1,
+  assignedTo: null,
+  estimatedTime: 1,
+  projectID: null
+})
+const isCreatingTask = ref(false)
+const createError = ref('')
 
 console.log("tasks", tasks.value)
 // Kanban columns configuration
@@ -113,6 +126,29 @@ const editModalTeamMembers = computed(() => {
   }
   
   const project = projects.value.find(p => p.id === parseInt(editFormData.value.projectID))
+  if (!project) {
+    return availableDevelopers.value
+  }
+  
+  const team = teams.value.find(t => t.id === project.team_id)
+  if (!team || !team.members) {
+    return availableDevelopers.value
+  }
+  
+  // Return only developers who are members of the team assigned to the project
+  return users.value.filter(user => 
+    user.type === 'dev' && team.members.includes(user.id)
+  )
+})
+
+// Get developers from the team assigned to the selected project (for create modal)
+const createModalTeamMembers = computed(() => {
+  if (!createFormData.value.projectID) {
+    // If no project selected, show all available developers
+    return availableDevelopers.value
+  }
+  
+  const project = projects.value.find(p => p.id === parseInt(createFormData.value.projectID))
   if (!project) {
     return availableDevelopers.value
   }
@@ -377,6 +413,70 @@ const deleteTaskHandler = async () => {
   }
 }
 
+// Create task modal functions
+const openCreateTaskModal = () => {
+  createFormData.value = {
+    label: '',
+    description: '',
+    step: 1,
+    assignedTo: null,
+    estimatedTime: 1,
+    projectID: null
+  }
+  createError.value = ''
+  showCreateModal.value = true
+}
+
+const closeCreateTaskModal = () => {
+  showCreateModal.value = false
+  createFormData.value = {
+    label: '',
+    description: '',
+    step: 1,
+    assignedTo: null,
+    estimatedTime: 1,
+    projectID: null
+  }
+  createError.value = ''
+}
+
+const createTaskHandler = async () => {
+  try {
+    // Validation
+    if (!createFormData.value.label.trim()) {
+      createError.value = 'Task title is required'
+      return
+    }
+
+    if (!createFormData.value.projectID) {
+      createError.value = 'Please select a project'
+      return
+    }
+
+    isCreatingTask.value = true
+    createError.value = ''
+
+    const taskData = {
+      label: createFormData.value.label.trim(),
+      description: createFormData.value.description.trim(),
+      projectID: parseInt(createFormData.value.projectID),
+      assignedTo: createFormData.value.assignedTo ? parseInt(createFormData.value.assignedTo) : null,
+      estimatedTime: parseInt(createFormData.value.estimatedTime),
+      step: parseInt(createFormData.value.step)
+    }
+
+    const createdTask = await createTask(taskData)
+    tasks.value.push(createdTask)
+
+    closeCreateTaskModal()
+  } catch (err) {
+    console.error('Error creating task:', err)
+    createError.value = 'Failed to create task. Please try again.'
+  } finally {
+    isCreatingTask.value = false
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
   isLoading.value = true
@@ -406,7 +506,16 @@ onMounted(async () => {
 <template>
   <div class="kanban-container">
     <div class="kanban-header">
-      <h1>{{ user?.type === 'dev' ? 'My Tasks' : user?.type === 'manager' ? 'My Team Tasks' : 'Project Tasks' }} - Kanban Board</h1>
+      <div class="header-content">
+        <h1>{{ user?.type === 'dev' ? 'My Tasks' : user?.type === 'manager' ? 'My Team Tasks' : 'Project Tasks' }} - Kanban Board</h1>
+        <Button 
+          v-if="user?.type === 'manager'"
+          @click="openCreateTaskModal"
+          variant="primary"
+          label="+ Create New Task"
+          class="create-task-btn"
+        />
+      </div>
       <div v-if="error" class="error-message">
         {{ error }}
       </div>
@@ -622,6 +731,114 @@ onMounted(async () => {
         </div>
       </template>
     </Modal>
+
+    <!-- Create New Task Modal -->
+    <Modal 
+      :is-visible="showCreateModal" 
+      title="Create New Task"
+      @close="closeCreateTaskModal"
+    >
+      <Alert :message="createError" type="error" />
+      
+      <FormGroup label="Task Title" input-id="createTaskTitle">
+        <Input
+          id="createTaskTitle"
+          name="createTaskTitle"
+          :value="createFormData.label"
+          @update="createFormData.label = $event"
+          placeholder="Enter task title"
+        />
+      </FormGroup>
+      
+      <FormGroup label="Description" input-id="createTaskDescription">
+        <textarea
+          id="createTaskDescription"
+          v-model="createFormData.description"
+          class="form-control textarea"
+          placeholder="Enter task description (optional)"
+          rows="3"
+        ></textarea>
+      </FormGroup>
+      
+      <FormGroup label="Project" input-id="createTaskProject">
+        <select 
+          id="createTaskProject"
+          v-model="createFormData.projectID"
+          class="form-control"
+        >
+          <option value="">Select a project</option>
+          <option 
+            v-for="project in managedProjects" 
+            :key="project.id" 
+            :value="project.id"
+          >
+            {{ project.project_name }}
+          </option>
+        </select>
+      </FormGroup>
+      
+      <FormGroup label="Assign to Developer" input-id="createTaskAssignee">
+        <select 
+          id="createTaskAssignee"
+          v-model="createFormData.assignedTo"
+          class="form-control"
+        >
+          <option value="">Select a developer (optional)</option>
+          <option 
+            v-for="user in createModalTeamMembers" 
+            :key="user.id" 
+            :value="user.id"
+          >
+            {{ user.first_name }} {{ user.last_name }}
+          </option>
+        </select>
+      </FormGroup>
+      
+      <div class="form-row">
+        <FormGroup label="Estimated Time (hours)" input-id="createTaskTime">
+          <Input
+            id="createTaskTime"
+            name="createTaskTime"
+            type="number"
+            :value="createFormData.estimatedTime"
+            @update="createFormData.estimatedTime = Number($event)"
+            placeholder="Enter estimated hours"
+            min="0"
+            step="0.5"
+          />
+        </FormGroup>
+        
+        <FormGroup label="Initial Status" input-id="createTaskStatus">
+          <select 
+            id="createTaskStatus"
+            v-model="createFormData.step"
+            class="form-control"
+          >
+            <option 
+              v-for="column in kanbanColumns" 
+              :key="column.step" 
+              :value="column.step"
+            >
+              {{ column.name }}
+            </option>
+          </select>
+        </FormGroup>
+      </div>
+      
+      <template #footer>
+        <Button 
+          @click="createTaskHandler" 
+          variant="success"
+          label="Create Task"
+          :loading="isCreatingTask"
+        />
+        <Button 
+          @click="closeCreateTaskModal" 
+          variant="secondary"
+          label="Cancel"
+        />
+      </template>
+    </Modal>
   </div>
 </template>
 
@@ -636,9 +853,20 @@ onMounted(async () => {
   margin-bottom: 30px;
 }
 
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
 .kanban-header h1 {
   color: #2c3e50;
-  margin-bottom: 10px;
+  margin: 0;
+}
+
+.create-task-btn {
+  margin-left: 20px;
 }
 
 .error-message {
@@ -921,6 +1149,30 @@ onMounted(async () => {
   .modal-footer-left,
   .modal-footer-right {
     justify-content: center;
+  }
+}
+
+/* Form row layout for create modal */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 768px) {
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .create-task-btn {
+    margin-left: 0;
+    width: 100%;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>
