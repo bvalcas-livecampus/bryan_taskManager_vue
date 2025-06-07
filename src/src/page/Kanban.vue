@@ -525,83 +525,85 @@ onMounted(async () => {
       <p>Loading tasks...</p>
     </div>
 
-    <div v-else class="kanban-board">
-      <div 
-        v-for="column in kanbanColumns" 
-        :key="column.id"
-        class="kanban-column"
-        @dragover="onDragOver"
-        @drop="onDrop($event, column.step)"
-      >
-        <div class="column-header" :style="{ borderTopColor: column.color }">
-          <h3>{{ column.name }}</h3>
-          <span class="task-count">
-            {{ (user?.type === 'dev' || user?.type === 'manager') ? 
-                (userTasksByStatus[column.step]?.length || 0) : 
-                (tasksByStatus[column.step]?.length || 0) }}
-          </span>
-        </div>
-        
-        <div class="column-content">
-          <div 
-            v-for="task in ((user?.type === 'dev' || user?.type === 'manager') ? userTasksByStatus[column.step] : tasksByStatus[column.step])" 
-            :key="task.id"
-            class="task-card"
-            :class="{ 'clickable': user?.type === 'dev' || user?.type === 'manager' }"
-            draggable="true"
-            @dragstart="onDragStart($event, task)"
-            @dragend="onDragEnd"
-            @click="(user?.type === 'dev' || user?.type === 'manager') ? openTaskEditModal(task) : null"
-          >
-            <div class="task-header">
-              <h4 class="task-title">{{ task.label }}</h4>
-              <div class="task-status-indicator" :style="{ backgroundColor: getStatusColor(task.step) }"></div>
-            </div>
-            
-            <div class="task-details">
-              <p class="task-project">
-                <strong>Project:</strong> {{ getProjectName(task.projectID) }}
-              </p>
-              <p class="task-time">
-                <strong>Estimated:</strong> {{ task.estimatedTime }}h
-              </p>
-              <p v-if="task.assignedTo" class="task-assigned">
-                <strong>Assigned to:</strong> {{ getUserName(task.assignedTo) }}
-              </p>
-              <p v-else class="task-assigned unassigned">
-                <strong>Status:</strong> Unassigned
-              </p>
-            </div>
+    <div v-else>
+      <div class="kanban-footer">
+        <div class="stats">
+          <div class="stat-item">
+            <span class="stat-label">Total Tasks:</span>
+            <span class="stat-value">{{ (user?.type === 'dev' || user?.type === 'manager') ? userTasks.length : tasks.length }}</span>
           </div>
-          
-          <div v-if="!((user?.type === 'dev' || user?.type === 'manager') ? userTasksByStatus[column.step]?.length : tasksByStatus[column.step]?.length)" class="empty-column">
-            <p>No tasks in {{ column.name.toLowerCase() }}</p>
+          <div class="stat-item">
+            <span class="stat-label">In Progress:</span>
+            <span class="stat-value">
+              {{ (user?.type === 'dev' || user?.type === 'manager') ? 
+                  (userTasksByStatus[3]?.length || 0) : 
+                  (tasksByStatus[3]?.length || 0) }}
+            </span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Completed:</span>
+            <span class="stat-value">
+              {{ (user?.type === 'dev' || user?.type === 'manager') ? 
+                  (userTasksByStatus[5]?.length || 0) : 
+                  (tasksByStatus[5]?.length || 0) }}
+            </span>
           </div>
         </div>
       </div>
-    </div>
 
-    <div class="kanban-footer">
-      <div class="stats">
-        <div class="stat-item">
-          <span class="stat-label">Total Tasks:</span>
-          <span class="stat-value">{{ (user?.type === 'dev' || user?.type === 'manager') ? userTasks.length : tasks.length }}</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">In Progress:</span>
-          <span class="stat-value">
-            {{ (user?.type === 'dev' || user?.type === 'manager') ? 
-                (userTasksByStatus[3]?.length || 0) : 
-                (tasksByStatus[3]?.length || 0) }}
-          </span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-label">Completed:</span>
-          <span class="stat-value">
-            {{ (user?.type === 'dev' || user?.type === 'manager') ? 
-                (userTasksByStatus[5]?.length || 0) : 
-                (tasksByStatus[5]?.length || 0) }}
-          </span>
+      <div class="kanban-board">
+        <div 
+          v-for="column in kanbanColumns" 
+          :key="column.id"
+          class="kanban-column"
+          @dragover="onDragOver"
+          @drop="onDrop($event, column.step)"
+        >
+          <div class="column-header" :style="{ borderTopColor: column.color }">
+            <h3>{{ column.name }}</h3>
+            <span class="task-count">
+              {{ (user?.type === 'dev' || user?.type === 'manager') ? 
+                  (userTasksByStatus[column.step]?.length || 0) : 
+                  (tasksByStatus[column.step]?.length || 0) }}
+            </span>
+          </div>
+          
+          <div class="column-content">
+            <div 
+              v-for="task in ((user?.type === 'dev' || user?.type === 'manager') ? userTasksByStatus[column.step] : tasksByStatus[column.step])" 
+              :key="task.id"
+              class="task-card"
+              :class="{ 'clickable': user?.type === 'dev' || user?.type === 'manager' }"
+              draggable="true"
+              @dragstart="onDragStart($event, task)"
+              @dragend="onDragEnd"
+              @click="(user?.type === 'dev' || user?.type === 'manager') ? openTaskEditModal(task) : null"
+            >
+              <div class="task-header">
+                <h4 class="task-title">{{ task.label }}</h4>
+                <div class="task-status-indicator" :style="{ backgroundColor: getStatusColor(task.step) }"></div>
+              </div>
+              
+              <div class="task-details">
+                <p class="task-project">
+                  <strong>Project:</strong> {{ getProjectName(task.projectID) }}
+                </p>
+                <p class="task-time">
+                  <strong>Estimated:</strong> {{ task.estimatedTime }}h
+                </p>
+                <p v-if="task.assignedTo" class="task-assigned">
+                  <strong>Assigned to:</strong> {{ getUserName(task.assignedTo) }}
+                </p>
+                <p v-else class="task-assigned unassigned">
+                  <strong>Status:</strong> Unassigned
+                </p>
+              </div>
+            </div>
+            
+            <div v-if="!((user?.type === 'dev' || user?.type === 'manager') ? userTasksByStatus[column.step]?.length : tasksByStatus[column.step]?.length)" class="empty-column">
+              <p>No tasks in {{ column.name.toLowerCase() }}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
