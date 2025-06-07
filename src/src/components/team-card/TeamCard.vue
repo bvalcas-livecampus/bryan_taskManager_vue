@@ -38,21 +38,23 @@
       </div>
     </div>
     
-    <!-- Quick Stats -->
-    <div class="team-stats">
-      <div class="stat-item">
-        <span class="stat-label">Active Projects:</span>
-        <span class="stat-value">{{ teamProjects.length }}</span>
+    <div class="team-footer">
+      <!-- Quick Stats -->
+      <div class="team-stats">
+        <div class="stat-item">
+          <span class="stat-label">Active Projects:</span>
+          <span class="stat-value">{{ teamProjects.length }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Team Size:</span>
+          <span class="stat-value">{{ team.members.length }}</span>
+        </div>
       </div>
-      <div class="stat-item">
-        <span class="stat-label">Team Size:</span>
-        <span class="stat-value">{{ team.members.length }}</span>
+      
+      <!-- Actions slot for admin actions -->
+      <div v-if="$slots.actions" class="team-actions">
+        <slot name="actions"></slot>
       </div>
-    </div>
-    
-    <!-- Actions slot for admin actions -->
-    <div v-if="$slots.actions" class="team-actions">
-      <slot name="actions"></slot>
     </div>
   </div>
 </template>
@@ -193,6 +195,7 @@ const props = defineProps({
   flex-direction: column;
   gap: 0.75rem;
   max-height: 200px;
+  height: 200px;
   overflow-y: auto;
   padding: 0.25rem;
 }
