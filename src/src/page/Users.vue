@@ -307,6 +307,30 @@ const canDeleteUser = (user) => {
     </div>
     
     <div class="users-content">
+
+      <!-- Users Summary -->
+      <div class="users-summary">
+        <h3>Users Summary</h3>
+        <div class="summary-stats">
+          <div class="stat-item">
+            <span class="stat-label">Total Users:</span>
+            <span class="stat-value">{{ users.length }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Admins:</span>
+            <span class="stat-value">{{ users.filter(u => u.type === 'admin').length }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Managers:</span>
+            <span class="stat-value">{{ users.filter(u => u.type === 'manager').length }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Developers:</span>
+            <span class="stat-value">{{ users.filter(u => u.type === 'dev').length }}</span>
+          </div>
+        </div>
+      </div>
+
       <!-- Loading State -->
       <div v-if="loading" class="loading">
         Loading users...
@@ -398,28 +422,6 @@ const canDeleteUser = (user) => {
         </table>
       </div>
       
-      <!-- Users Summary -->
-      <div class="users-summary">
-        <h3>Users Summary</h3>
-        <div class="summary-stats">
-          <div class="stat-item">
-            <span class="stat-label">Total Users:</span>
-            <span class="stat-value">{{ users.length }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Admins:</span>
-            <span class="stat-value">{{ users.filter(u => u.type === 'admin').length }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Managers:</span>
-            <span class="stat-value">{{ users.filter(u => u.type === 'manager').length }}</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-label">Developers:</span>
-            <span class="stat-value">{{ users.filter(u => u.type === 'dev').length }}</span>
-          </div>
-        </div>
-      </div>
     </div>
     
     <!-- Create User Modal -->
@@ -576,7 +578,7 @@ const canDeleteUser = (user) => {
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  margin-top: 2rem;
 }
 
 .users-table {

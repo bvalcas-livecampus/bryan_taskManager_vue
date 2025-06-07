@@ -2,7 +2,6 @@
   <div class="team-card">
     <div class="team-header">
       <h3 class="team-name">{{ team.name }}</h3>
-      <span class="team-id">#{{ team.id }}</span>
     </div>
     
     <div class="team-info">
@@ -32,7 +31,6 @@
         >
           <div class="project-header">
             <span class="project-name">{{ project.project_name }}</span>
-            <span class="project-id">#{{ project.id }}</span>
           </div>
         </div>
       </div>
