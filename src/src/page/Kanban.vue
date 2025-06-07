@@ -74,6 +74,23 @@ const userTasksByStatus = computed(() => {
   return grouped
 })
 
+// Filter developers to only show those in manager's teams
+const availableDevelopers = computed(() => {
+  if (user.value?.type !== 'manager') {
+    return users.value.filter(u => u.type === 'dev')
+  }
+  
+  // Get all member IDs from manager's teams
+  const managerTeamMemberIds = teams.value
+    .filter(team => team.managerID === user.value.id)
+    .flatMap(team => team.members)
+  
+  // Filter developers to only those in manager's teams
+  return users.value.filter(u => 
+    u.type === 'dev' && managerTeamMemberIds.includes(u.id)
+  )
+})
+
 // Helper functions
 const getProjectName = (projectId) => {
   const project = projects.value.find(p => p.id === projectId)
@@ -467,7 +484,7 @@ onMounted(async () => {
           >
             <option :value="null">Unassigned</option>
             <option 
-              v-for="dev in users.filter(u => u.type === 'dev')" 
+              v-for="dev in availableDevelopers" 
               :key="dev.id" 
               :value="dev.id"
             >
