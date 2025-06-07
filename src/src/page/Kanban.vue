@@ -1,6 +1,6 @@
 <script setup>
 import { ref, computed, onMounted, inject } from 'vue'
-import { fetchTasks, updateTaskStatus, updateTask } from '../../api/tasks.js'
+import { fetchTasks, updateTaskStatus, updateTask, deleteTask } from '../../api/tasks.js'
 import { fetchProjects, fetchProjectsByTeam } from '../../api/projects.js'
 import { fetchUsers } from '../../api/users.js'
 import { fetchTeamsByManager } from '../../api/teams.js'
@@ -30,9 +30,11 @@ const editFormData = ref({
   description: '',
   step: 1,
   assignedTo: null,
-  estimatedTime: 0
+  estimatedTime: 0,
+  projectID: null
 })
 const isUpdatingTask = ref(false)
+const isDeletingTask = ref(false)
 const updateError = ref('')
 
 console.log("tasks", tasks.value)
@@ -88,6 +90,41 @@ const availableDevelopers = computed(() => {
   // Filter developers to only those in manager's teams
   return users.value.filter(u => 
     u.type === 'dev' && managerTeamMemberIds.includes(u.id)
+  )
+})
+
+// Get projects managed by the current manager
+const managedProjects = computed(() => {
+  if (user.value?.type !== 'manager') {
+    return projects.value
+  }
+  
+  // Filter projects that belong to teams managed by this manager
+  return projects.value.filter(project => 
+    managerProjectIds.value.includes(project.id)
+  )
+})
+
+// Get developers from the team assigned to the selected project (for edit modal)
+const editModalTeamMembers = computed(() => {
+  if (!editFormData.value.projectID) {
+    // If no project selected, show all available developers
+    return availableDevelopers.value
+  }
+  
+  const project = projects.value.find(p => p.id === parseInt(editFormData.value.projectID))
+  if (!project) {
+    return availableDevelopers.value
+  }
+  
+  const team = teams.value.find(t => t.id === project.team_id)
+  if (!team || !team.members) {
+    return availableDevelopers.value
+  }
+  
+  // Return only developers who are members of the team assigned to the project
+  return users.value.filter(user => 
+    user.type === 'dev' && team.members.includes(user.id)
   )
 })
 
@@ -228,7 +265,8 @@ const openTaskEditModal = (task) => {
     description: task.description || '',
     step: task.step,
     assignedTo: task.assignedTo || null,
-    estimatedTime: task.estimatedTime || 0
+    estimatedTime: task.estimatedTime || 0,
+    projectID: task.projectID || null
   }
   updateError.value = ''
   showEditModal.value = true
@@ -242,7 +280,8 @@ const closeTaskEditModal = () => {
     description: '',
     step: 1,
     assignedTo: null,
-    estimatedTime: 0
+    estimatedTime: 0,
+    projectID: null
   }
   updateError.value = ''
 }
@@ -274,6 +313,9 @@ const saveTaskChanges = async () => {
       if (editFormData.value.estimatedTime !== editingTask.value.estimatedTime) {
         updates.estimatedTime = Number(editFormData.value.estimatedTime)
       }
+      if (editFormData.value.projectID !== editingTask.value.projectID) {
+        updates.projectID = editFormData.value.projectID
+      }
     }
     
     // Validate that we have something to update
@@ -303,6 +345,35 @@ const saveTaskChanges = async () => {
     updateError.value = 'Failed to update task. Please try again.'
   } finally {
     isUpdatingTask.value = false
+  }
+}
+
+const deleteTaskHandler = async () => {
+  if (!editingTask.value) return
+  
+  if (!confirm(`Are you sure you want to delete the task "${editingTask.value.label}"? This action cannot be undone.`)) {
+    return
+  }
+  
+  try {
+    isDeletingTask.value = true
+    updateError.value = ''
+    
+    // Delete task via API
+    await deleteTask(editingTask.value.id)
+    
+    // Remove task from local tasks array
+    const taskIndex = tasks.value.findIndex(t => t.id === editingTask.value.id)
+    if (taskIndex !== -1) {
+      tasks.value.splice(taskIndex, 1)
+    }
+    
+    closeTaskEditModal()
+  } catch (err) {
+    console.error('Error deleting task:', err)
+    updateError.value = 'Failed to delete task. Please try again.'
+  } finally {
+    isDeletingTask.value = false
   }
 }
 
@@ -476,6 +547,23 @@ onMounted(async () => {
       
       <!-- Manager-only fields -->
       <template v-if="user?.type === 'manager'">
+        <FormGroup label="Project" input-id="taskProject">
+          <select 
+            id="taskProject"
+            v-model="editFormData.projectID"
+            class="form-control"
+          >
+            <option :value="null">Select a project</option>
+            <option 
+              v-for="project in managedProjects" 
+              :key="project.id" 
+              :value="project.id"
+            >
+              {{ project.project_name }}
+            </option>
+          </select>
+        </FormGroup>
+        
         <FormGroup label="Assign to Developer" input-id="taskAssignment">
           <select 
             id="taskAssignment"
@@ -484,7 +572,7 @@ onMounted(async () => {
           >
             <option :value="null">Unassigned</option>
             <option 
-              v-for="dev in availableDevelopers" 
+              v-for="dev in editModalTeamMembers" 
               :key="dev.id" 
               :value="dev.id"
             >
@@ -508,17 +596,30 @@ onMounted(async () => {
       </template>
       
       <template #footer>
-        <Button 
-          @click="saveTaskChanges" 
-          variant="success"
-          label="Save Changes"
-          :loading="isUpdatingTask"
-        />
-        <Button 
-          @click="closeTaskEditModal" 
-          variant="secondary"
-          label="Cancel"
-        />
+        <div class="modal-footer-content">
+          <div class="modal-footer-left">
+            <Button 
+              v-if="user?.type === 'manager'"
+              @click="deleteTaskHandler" 
+              variant="danger"
+              label="Delete Task"
+              :loading="isDeletingTask"
+            />
+          </div>
+          <div class="modal-footer-right">
+            <Button 
+              @click="saveTaskChanges" 
+              variant="success"
+              label="Save Changes"
+              :loading="isUpdatingTask"
+            />
+            <Button 
+              @click="closeTaskEditModal" 
+              variant="secondary"
+              label="Cancel"
+            />
+          </div>
+        </div>
       </template>
     </Modal>
   </div>
@@ -789,5 +890,37 @@ onMounted(async () => {
   resize: vertical;
   min-height: 100px;
   font-family: inherit;
+}
+
+/* Modal footer layout */
+.modal-footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.modal-footer-left {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.modal-footer-right {
+  display: flex;
+  gap: 0.75rem;
+}
+
+/* Responsive modal footer */
+@media (max-width: 576px) {
+  .modal-footer-content {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
+  }
+  
+  .modal-footer-left,
+  .modal-footer-right {
+    justify-content: center;
+  }
 }
 </style>
