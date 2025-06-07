@@ -31,6 +31,7 @@ const navigationItems = computed(() => {
             ]
         case 'manager':
             return [
+                { path: '/kanban', label: '📋 Kanban', icon: '📋' },
                 { path: '/projects', label: '📁 Projects', icon: '📁' },
                 { path: '/tasks', label: '✅ Tasks', icon: '✅' }
             ]

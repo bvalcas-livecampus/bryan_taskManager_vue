@@ -25,7 +25,9 @@ const editingTask = ref(null)
 const editFormData = ref({
   label: '',
   description: '',
-  step: 1
+  step: 1,
+  assignedTo: null,
+  estimatedTime: 0
 })
 const isUpdatingTask = ref(false)
 const updateError = ref('')
@@ -167,13 +169,15 @@ const onDrop = async (event, newStep) => {
 const isDragging = ref(false)
 
 const openTaskEditModal = (task) => {
-  if (user.value?.type !== 'dev' || isDragging.value) return // Only devs can edit tasks
+  if ((user.value?.type !== 'dev' && user.value?.type !== 'manager') || isDragging.value) return // Only devs and managers can edit tasks
   
   editingTask.value = task
   editFormData.value = {
     label: task.label,
     description: task.description || '',
-    step: task.step
+    step: task.step,
+    assignedTo: task.assignedTo || null,
+    estimatedTime: task.estimatedTime || 0
   }
   updateError.value = ''
   showEditModal.value = true
@@ -185,7 +189,9 @@ const closeTaskEditModal = () => {
   editFormData.value = {
     label: '',
     description: '',
-    step: 1
+    step: 1,
+    assignedTo: null,
+    estimatedTime: 0
   }
   updateError.value = ''
 }
@@ -207,6 +213,16 @@ const saveTaskChanges = async () => {
     }
     if (editFormData.value.step !== editingTask.value.step) {
       updates.step = editFormData.value.step
+    }
+    
+    // Manager-only fields
+    if (user.value?.type === 'manager') {
+      if (editFormData.value.assignedTo !== editingTask.value.assignedTo) {
+        updates.assignedTo = editFormData.value.assignedTo
+      }
+      if (editFormData.value.estimatedTime !== editingTask.value.estimatedTime) {
+        updates.estimatedTime = Number(editFormData.value.estimatedTime)
+      }
     }
     
     // Validate that we have something to update
@@ -291,11 +307,11 @@ onMounted(async () => {
             v-for="task in (user?.type === 'dev' ? userTasksByStatus[column.step] : tasksByStatus[column.step])" 
             :key="task.id"
             class="task-card"
-            :class="{ 'clickable': user?.type === 'dev' }"
+            :class="{ 'clickable': user?.type === 'dev' || user?.type === 'manager' }"
             draggable="true"
             @dragstart="onDragStart($event, task)"
             @dragend="onDragEnd"
-            @click="user?.type === 'dev' ? openTaskEditModal(task) : null"
+            @click="(user?.type === 'dev' || user?.type === 'manager') ? openTaskEditModal(task) : null"
           >
             <div class="task-header">
               <h4 class="task-title">{{ task.label }}</h4>
@@ -308,6 +324,12 @@ onMounted(async () => {
               </p>
               <p class="task-time">
                 <strong>Estimated:</strong> {{ task.estimatedTime }}h
+              </p>
+              <p v-if="task.assignedTo" class="task-assigned">
+                <strong>Assigned to:</strong> {{ getUserName(task.assignedTo) }}
+              </p>
+              <p v-else class="task-assigned unassigned">
+                <strong>Status:</strong> Unassigned
               </p>
             </div>
 
@@ -391,6 +413,39 @@ onMounted(async () => {
           </option>
         </select>
       </FormGroup>
+      
+      <!-- Manager-only fields -->
+      <template v-if="user?.type === 'manager'">
+        <FormGroup label="Assign to Developer" input-id="taskAssignment">
+          <select 
+            id="taskAssignment"
+            v-model="editFormData.assignedTo"
+            class="form-control"
+          >
+            <option :value="null">Unassigned</option>
+            <option 
+              v-for="dev in users.filter(u => u.type === 'dev')" 
+              :key="dev.id" 
+              :value="dev.id"
+            >
+              {{ dev.first_name }} {{ dev.last_name }}
+            </option>
+          </select>
+        </FormGroup>
+        
+        <FormGroup label="Estimated Time (hours)" input-id="taskTime">
+          <Input
+            id="taskTime"
+            name="taskTime"
+            type="number"
+            :value="editFormData.estimatedTime"
+            @update="editFormData.estimatedTime = Number($event)"
+            placeholder="Enter estimated hours"
+            min="0"
+            step="0.5"
+          />
+        </FormGroup>
+      </template>
       
       <template #footer>
         <Button 
@@ -558,6 +613,11 @@ onMounted(async () => {
 
 .task-details strong {
   color: #495057;
+}
+
+.task-assigned.unassigned {
+  color: #dc3545;
+  font-style: italic;
 }
 
 .task-footer {
