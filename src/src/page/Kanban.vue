@@ -881,10 +881,11 @@ onMounted(async () => {
 }
 
 .kanban-board {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: flex;
   gap: 20px;
   margin-bottom: 30px;
+  overflow-x: auto;
+  padding-bottom: 10px;
 }
 
 .kanban-column {
@@ -893,6 +894,8 @@ onMounted(async () => {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   overflow: hidden;
   min-height: 500px;
+  flex: 0 0 300px;
+  min-width: 300px;
 }
 
 .column-header {
